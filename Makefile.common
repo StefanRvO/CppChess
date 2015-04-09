@@ -1,0 +1,79 @@
+#Define project name
+PROJECT=CppChess
+
+LDFILE = Linker.ld
+MAPFILE = MAP.txt
+
+#Define BUILDDIR
+BUILDDIR = bin
+SOURCEDIR = sources
+ASSEMBLYDIR = sources
+
+#C source files
+C_SOURCES = $(wildcard $(SOURCEDIR)/*.c) #Grab all .c files in source dir
+
+#CPP source files
+CPP_SOURCES = $(wildcard $(SOURCEDIR)/*.cpp) #Grab all .c files in source dir
+#Assembly source files
+AS_SOURCES = $(wildcard $(ASSEMBLYDIR)/*.S) #Grab all .S files in assemblydir dir
+
+
+#if SINGLEMODULE is defined, we make a C file which includes all others, and only compiles that
+ifdef SINGLEMODULE
+	SOURCES = MASTER.cpp
+else
+SOURCES = $(C_SOURCES:$(SOURCEDIR)/%=%) #Remove leading $(SOURCEDIR)/
+SOURCES += $(CPP_SOURCES:$(SOURCEDIR)/%=%) #Remove leading $(SOURCEDIR)/
+endif
+
+SOURCES += $(AS_SOURCES:$(ASSEMBLYDIR)/%=%) #Remove leading $(ASSEMBLYDIR)/
+
+
+OBJECTS_ = $(join $(addsuffix ${BUILDDIR}/, $(dir $(SOURCES))), $(notdir $(SOURCES:.c=.o)))
+OBJECTS = $(OBJECTS_:.S=.o)
+OBJECTS = $(OBJECTS_:.cpp=.o)
+
+
+
+#Define linker, archiver, etc. Compiler is defined in main makefile
+PREFIX=
+AR=${PREFIX}ar
+LD=${CC}
+AS=${PREFIX}gcc
+OBJCOPY=${PREFIX}objcopy
+
+
+#
+# The flags passed to the compiler.
+#
+CFLAGS=-ffunction-sections 	\
+       -fdata-sections     	\
+       -Wall               	\
+       -Wextra             	\
+			 -Wshadow							\
+			 -Wpointer-arith			\
+			 -Wcast-qual					\
+       -Werror							\
+       -pedantic           	\
+       --std=c++11
+
+#
+# Add optimisation arguments
+#
+CFLAGS+=${OPTS}
+
+
+#
+# The flags passed to the assembler.
+#
+
+AFLAGS=
+
+LDFLAGS=-Wl,--gc-sections 	\
+ 				-Wl,-Map=${MAPFILE} \
+				-lpthread						\
+				-lSDL2              \
+				-lSDL2_ttf          \
+				-lSDL2_gfx          \
+
+include Makefile.rules

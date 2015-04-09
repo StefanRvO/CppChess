@@ -1,0 +1,64 @@
+all: ${BUILDDIR}
+all: ${PROJECT}
+
+
+.PHONY: clean
+clean:
+	rm -rf ${BUILDDIR}
+	rm -rf ${PROJECT}
+	rm -rf ${MAPFILE}
+	rm -rf ${SOURCEDIR}/MASTER.cpp
+
+
+
+# pull in dependency info for *existing* .o files
+-include $(OBJECTS:.o=.d)
+
+${BUILDDIR}:
+	mkdir ${BUILDDIR} -p
+
+${BUILDDIR}/%.o: ${SOURCEDIR}/%.c
+	@${CC} ${CFLAGS} -c $< -o $@
+	@echo "CC $@"
+#create dependency file to detect changes in header
+#http://scottmcpeak.com/autodepend/autodepend.html is used as reference
+
+	@${CC} -MM $(CFLAGS) $< > ${@:.o=.d}
+	@mv -f ${@:.o=.d} ${@:.o=.d.tmp}
+	@sed -e 's|.*:|$@:|' < ${@:.o=.d.tmp} > ${@:.o=.d}
+	@sed -e 's/.*://' -e 's/\\$$//' < ${@:.o=.d.tmp} | fmt -1 | \
+	  sed -e 's/^ *//' -e 's/$$/:/' >> ${@:.o=.d}
+	@rm -f ${@:.o=.d.tmp}
+
+${BUILDDIR}/%.o: ${SOURCEDIR}/%.cpp
+	@${CC} ${CFLAGS} -c $< -o $@
+	@echo "CC $@"
+#create dependency file to detect changes in header
+#http://scottmcpeak.com/autodepend/autodepend.html is used as reference
+
+	@${CC} -MM $(CFLAGS) $< > ${@:.o=.d}
+	@mv -f ${@:.o=.d} ${@:.o=.d.tmp}
+	@sed -e 's|.*:|$@:|' < ${@:.o=.d.tmp} > ${@:.o=.d}
+	@sed -e 's/.*://' -e 's/\\$$//' < ${@:.o=.d.tmp} | fmt -1 | \
+	  sed -e 's/^ *//' -e 's/$$/:/' >> ${@:.o=.d}
+	@rm -f ${@:.o=.d.tmp}
+
+
+${BUILDDIR}/%.o: ${ASSEMBLYDIR}/%.S
+	@${AS} ${AFLAGS} -c $< -o $@
+	@echo "CC $@"
+	
+${BUILDDIR}/%.a:
+	@${AR} -cr ${@} ${^}
+	@echo "CC ${@}"
+
+${PROJECT}: ${OBJECTS} ${LIBRARIES}
+	@${LD}  ${LDFLAGS} -o ${@} $(filter %.o %.a, ${^})
+	@echo "LD ${@}"
+	
+
+#This creates a file which include all others.
+${SOURCEDIR}/MASTER.cpp: ${SOURCES_}
+	@$(foreach file,${C_SOURCES},echo "#include \"../$(file)\"" >> ${SOURCEDIR}/MASTER.cpp;)
+	@$(foreach file,${CPP_SOURCES},echo "#include \"../$(file)\"" >> ${SOURCEDIR}/MASTER.cpp;)
+

@@ -1,0 +1,14 @@
+#include common definitions for all version of the makefile
+include  Makefile.common
+
+#define compiler
+COMPILER=clang++
+CC=${COMPILER}
+#Locate gcc libraries
+
+
+
+INCLUDES=-I/usr/arm-none-eabi/include/
+#add target to clang flags, and gcc include folder
+CFLAGS+=-Wno-unknown-warning-option
+
