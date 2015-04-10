@@ -55,7 +55,7 @@ CFLAGS=-ffunction-sections 	\
 			 -Wcast-qual					\
        -Werror							\
        -pedantic           	\
-       --std=c++11
+       --std=c++14
 
 #
 # Add optimisation arguments

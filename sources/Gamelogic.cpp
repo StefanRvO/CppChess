@@ -1,27 +1,29 @@
 #include "../headers/Gamelogic.h"
 static void find_pseudo_legal_pawn_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
 
-static void find_pseudo_legal_knight_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
+/*static void find_pseudo_legal_knight_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
 
 static void find_pseudo_legal_queen_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
 
 static void find_pseudo_legal_rook_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
 
 static void find_pseudo_legal_king_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
-
-
+*/
+void find_legal_moves(piece *this_piece, player __attribute__((unused)) *this_player, player __attribute__((unused)) *opponent, board *game_board, std::vector<move> *moves)
+{
+  find_pseudo_legal_moves(this_piece, game_board, moves);
+}
 /* This function generates all moves
 ** without considering if the moves
 ** will make it's own king chess. */
-void find_pseudo_legal_moves(piece *this_piece, player *this_player,
-      player *opponent, board *game_board, std::vector<move> *moves)
+void find_pseudo_legal_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
 {
   switch(this_piece->type)
   {
   	case pawn:
       find_pseudo_legal_pawn_moves(this_piece, game_board, moves);
       break;
-  	case knight:
+  	/*case knight:
       find_pseudo_legal_knight_moves(this_piece, game_board, moves);
       break;
   	case queen:
@@ -35,6 +37,8 @@ void find_pseudo_legal_moves(piece *this_piece, player *this_player,
       break;
   	case king:
       find_pseudo_legal_king_moves(this_piece, game_board, moves);
+      break;*/
+    default:
       break;
   }
 }
@@ -53,7 +57,7 @@ static void find_pseudo_legal_pawn_moves(piece *this_piece, board *game_board, s
               this_piece->y_pos << Y_START_OFF | (this_piece->y_pos + 2) << Y_END_OFF |
               DOUBLEPAWN );
     }
-    else if(this_piece->y_pos == 6) // check for promotions
+    if(this_piece->y_pos == 6) // check for promotions
     {
       if(game_board->fields[this_piece->x_pos][this_piece->y_pos + 1] == nullptr) //don't need boundchecking here.
       {
@@ -151,7 +155,7 @@ static void find_pseudo_legal_pawn_moves(piece *this_piece, board *game_board, s
               this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 2) << Y_END_OFF |
               DOUBLEPAWN );
     }
-    else if(this_piece->y_pos == 1) // check for promotions
+    if(this_piece->y_pos == 1) // check for promotions
     {
       if(game_board->fields[this_piece->x_pos][this_piece->y_pos - 1] == nullptr) //don't need boundchecking here.
       {
@@ -241,32 +245,32 @@ static void find_pseudo_legal_pawn_moves(piece *this_piece, board *game_board, s
 
 /* This function generates all moves for a knight
 ** without considering if the moves
-** will make it's own king chess. */
+** will make it's own king chess.
 static void find_pseudo_legal_knight_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
 {
 
-}
+} */
 
 /* This function generates all moves for a queen
 ** without considering if the moves
-** will make it's own king chess. */
+** will make it's own king chess.
 static void find_pseudo_legal_queen_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
 {
 
-}
+} */
 
 /* This function generates all moves for a rook
 ** without considering if the moves
-** will make it's own king chess. */
+** will make it's own king chess.
 static void find_pseudo_legal_rook_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
 {
 
-}
+} */
 
 /* This function generates all moves for a king
 ** without considering if the moves
-** will make it chess. */
+** will make it chess.
 static void find_pseudo_legal_king_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
 {
 
-}
+} */

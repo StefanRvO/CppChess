@@ -11,7 +11,6 @@
 #define KNIGHTPROMO     6
 #define ROOKPROMO       7
 #define BISHOPPROMO     8
-#define CAPTURE         1
 #define QUEENPROMO_CAP  9
 #define KNIGHTPROMO_CAP 10
 #define ROOKPROMO_CAP   11
@@ -23,5 +22,12 @@ typedef uint16_t move;
 #define X_END_OFF   10
 #define Y_START_OFF 7
 #define Y_END_OFF   4
+#define X_START_MASK   0b1110000000000000
+#define X_END_MASK     0b1110000000000
+#define Y_START_MASK   0b1110000000
+#define Y_END_MASK     0b1110000
+#define MOVE_TYPE_MASK 0b1111
+
+
 //|startpos_x|endpos_x|startpos_y|endpos_y|move_type|
 //|     3    |    3   |    3     |   3    |    4    |
