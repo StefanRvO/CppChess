@@ -17,6 +17,11 @@
 #define CAPTURE_MOVE_COLOUR     125,20 ,20 ,255
 #define PROMO_MOVE_COLOUR       20 ,20 ,125 ,255
 #define SELECTED_PIECE_COLOUR   255 ,150 ,0 ,255
+#define QUEEN_PROMO_SELECT      30  ,30  ,30,255
+#define KNIGHT_PROMO_SELECT     60  ,60  ,60,255
+#define ROOK_PROMO_SELECT       90  ,90  ,90,255
+#define BISHOP_PROMO_SELECT     120 ,120 ,120,255
+
 #define WHITE_PIECE 255,255,255,255
 #define BLACK_PIECE 0  ,0  ,0  ,255
 #define DRAWFPS 20
@@ -34,6 +39,7 @@ class drawer
     move select_move(player_colour player_to_select);
     void draw_pieces();
     void draw_possible_moves_board(std::vector<move> *possible_moves);
+    move choose_promotion(move base_move);
   public:
     drawer(player *white_player, player *black_player, board *game_board_);
     ~drawer();

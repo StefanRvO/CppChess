@@ -55,7 +55,92 @@ drawer::~drawer()
   SDL_DestroyWindow(window);
   SDL_Quit();
 }
+move drawer::choose_promotion(move base_move)
+{
+  int start_x = (base_move & X_START_MASK) >> X_START_OFF;
+  int start_y = (base_move & Y_START_MASK) >> Y_START_OFF;
+  player_colour colour = game_board->fields[start_x][start_y]->colour;
 
+  while(true)
+  {
+    SDL_Event event; //grab events
+    int y, x, w, h;
+    SDL_GetWindowSize(window,&w,&h);
+
+    while(SDL_PollEvent(&event))
+    {
+      switch (event.type)
+      {
+        case SDL_QUIT:
+        {
+          return 0xFFFF;
+          break;
+        }
+        case SDL_MOUSEBUTTONDOWN:
+        {
+          if(event.button.button == SDL_BUTTON_LEFT)
+          {
+            y = event.button.y;
+            x = event.button.x;
+
+            //find the pressed field.
+            int field_y = float(y) / w * 8;
+            int field_x = float(x) / h * 8;
+            auto move_type = base_move & MOVE_TYPE_MASK;
+            if(move_type == QUEENPROMO || move_type == KNIGHTPROMO ||
+                move_type == ROOKPROMO || move_type == BISHOPPROMO)
+            {
+              if(field_y == 3 && field_x == 2) return (base_move & ~MOVE_TYPE_MASK) | QUEENPROMO;
+              if(field_y == 3 && field_x == 3) return (base_move & ~MOVE_TYPE_MASK) | KNIGHTPROMO;
+              if(field_y == 3 && field_x == 4) return (base_move & ~MOVE_TYPE_MASK) | ROOKPROMO;
+              if(field_y == 3 && field_x == 5) return (base_move & ~MOVE_TYPE_MASK) | BISHOPPROMO;
+            }
+            else
+            {
+              if(field_y == 3 && field_x == 2) return (base_move & ~MOVE_TYPE_MASK) | QUEENPROMO_CAP;
+              if(field_y == 3 && field_x == 3) return (base_move & ~MOVE_TYPE_MASK) | KNIGHTPROMO_CAP;
+              if(field_y == 3 && field_x == 4) return (base_move & ~MOVE_TYPE_MASK) | ROOKPROMO_CAP;
+              if(field_y == 3 && field_x == 5) return (base_move & ~MOVE_TYPE_MASK) | BISHOPPROMO_CAP;
+            }
+          }
+        }
+      }
+    }
+    int fontsize = w;
+    if (h > w) fontsize = h;
+    fontsize /= 10;
+    TextDrawer TDrawer("FreeSans.ttf", fontsize);
+    std::string piece_string;
+    for(int i = 2; i <= 5; i++)
+    {
+      if(i == 2)      SDL_SetRenderDrawColor(renderer, QUEEN_PROMO_SELECT);
+      else if(i == 3) SDL_SetRenderDrawColor(renderer, KNIGHT_PROMO_SELECT);
+      else if(i == 4) SDL_SetRenderDrawColor(renderer, ROOK_PROMO_SELECT);
+      else if(i == 5) SDL_SetRenderDrawColor(renderer, BISHOP_PROMO_SELECT);
+
+      SDL_Rect r;
+      r.x = w / 8 * i;
+      r.y = h / 8 * 3;
+      r.w = w / 8;
+      r.h = h / 8;
+      SDL_RenderFillRect( renderer, &r );
+
+      switch(i)
+      {
+        case 2: piece_string = "Q"; break;
+        case 3: piece_string = "K"; break;
+        case 4: piece_string = "T"; break;
+        case 5: piece_string = "R"; break;
+      }
+      if(colour == white)
+        TDrawer.DrawText(renderer, piece_string.c_str(), w / 8 * i + w / 35, h / 8 * 3, WHITE_PIECE);
+      else
+        TDrawer.DrawText(renderer, piece_string.c_str(), w / 8 * i + w / 35, h / 8 * 3, BLACK_PIECE);
+    }
+    SDL_RenderPresent(renderer);
+    timer.tick();
+  }
+}
 move drawer::select_move(player_colour player_to_select)
 {
   bool move_selected = false;
@@ -99,10 +184,14 @@ move drawer::select_move(player_colour player_to_select)
                 //Check if promotion
                 if(move_type == QUEENPROMO || move_type == KNIGHTPROMO || move_type == ROOKPROMO ||
                     move_type == BISHOPPROMO || move_type == QUEENPROMO_CAP || move_type == KNIGHTPROMO_CAP
-                    || move_type == ROOKPROMO_CAP || BISHOPPROMO_CAP)
+                    || move_type == ROOKPROMO_CAP || move_type == BISHOPPROMO_CAP)
                     {
                       //show promotion dialog
-                      //this_move = promotion_dialog(this_move, &possible_moves);
+                      std::cout << move_type << std::endl;
+                      std::cout << this_move << std::endl;
+                      this_move = choose_promotion(this_move);
+                      std::cout << this_move << std::endl;
+
                     }
                   return this_move;
               }
@@ -127,6 +216,7 @@ move drawer::select_move(player_colour player_to_select)
     draw_possible_moves_board( &possible_moves);
     draw_pieces();
     SDL_RenderPresent(renderer);
+    timer.tick();
 
   }
   return selected_move;
@@ -157,8 +247,8 @@ void drawer::draw_possible_moves_board(std::vector<move> *possible_moves)
     auto move_type = this_move & MOVE_TYPE_MASK;
     //std::cout << move_x << "\t" << move_y << std::endl;
 
-    if (move_type == QUIET || move_type == DOUBLEPAWN || move_type == RIGHTCASTLE ||
-          move_type == LEFTCASTLE)
+    if (move_type == QUIET || move_type == DOUBLEPAWN || move_type == QUEEN_SIDE_CASTLE ||
+          move_type == KING_SIDE_CASTLE)
       SDL_SetRenderDrawColor(renderer, QUIET_MOVE_COLOUR);
     else if(move_type == CAPTURE || move_type == QUEENPROMO_CAP || move_type == KNIGHTPROMO_CAP ||
       move_type == ROOKPROMO_CAP || move_type == BISHOPPROMO_CAP)

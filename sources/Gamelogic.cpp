@@ -541,9 +541,9 @@ void make_move(piece *moving_piece, board *game_board, move the_move)
       game_board->fields[move_end_x][move_end_y] = moving_piece;
       moving_piece->change_type(bishop);
       break;
-    case RIGHTCASTLE:
+    case QUEEN_SIDE_CASTLE:
       break;
-    case LEFTCASTLE:
+    case KING_SIDE_CASTLE:
       break;
   }
 
