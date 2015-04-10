@@ -2,14 +2,21 @@
 //Class for holding information about a move
 //The variable for the move is this:
 //Defines for movetypes
-#define QUIET       0
-#define DOUBLEPAWN  1
-#define RIGHTCASTLE 2
-#define LEFTCASTLE  3
-#define QUEENPROMO  4
-#define KNIGHTPROMO 5
-#define ROOKPROMO   6
-#define BISHOPPROMO 7
+#define QUIET           0
+#define CAPTURE         1
+#define DOUBLEPAWN      2
+#define RIGHTCASTLE     3
+#define LEFTCASTLE      4
+#define QUEENPROMO      5
+#define KNIGHTPROMO     6
+#define ROOKPROMO       7
+#define BISHOPPROMO     8
+#define CAPTURE         1
+#define QUEENPROMO_CAP  9
+#define KNIGHTPROMO_CAP 10
+#define ROOKPROMO_CAP   11
+#define BISHOPPROMO_CAP 12
+
 typedef uint16_t move;
 
 #define X_START_OFF 13
