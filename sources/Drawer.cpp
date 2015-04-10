@@ -137,13 +137,25 @@ void drawer::draw_possible_moves_board(std::vector<move> *possible_moves)
   draw_board();
   int w,h;
   SDL_GetWindowSize(window,&w,&h);
-  //draw the quiet fields green
+  //Draw the selected piece a colour
+  if(possible_moves->size())
+  {
+    int x_pos = ((*possible_moves)[0] & X_START_MASK) >> X_START_OFF;
+    int y_pos = ((*possible_moves)[0] & Y_START_MASK) >> Y_START_OFF;
+    SDL_SetRenderDrawColor(renderer, SELECTED_PIECE_COLOUR);
+    SDL_Rect r;
+    r.x = w / 8 * x_pos;
+    r.y = h / 8 * y_pos;
+    r.w = w / 8;
+    r.h = h / 8;
+    SDL_RenderFillRect( renderer, &r );
+  }
   for(auto this_move : *possible_moves)
   {
     int move_x = (this_move & X_END_MASK) >> X_END_OFF;
     int move_y = (this_move & Y_END_MASK) >> Y_END_OFF;
     auto move_type = this_move & MOVE_TYPE_MASK;
-    std::cout << move_x << "\t" << move_y << "\n" << std::endl;
+    //std::cout << move_x << "\t" << move_y << std::endl;
 
     if (move_type == QUIET || move_type == DOUBLEPAWN || move_type == RIGHTCASTLE ||
           move_type == LEFTCASTLE)
@@ -172,11 +184,17 @@ void drawer::loop()
     {
       move selected_move = select_move(white);
       if(selected_move == 0xFFFF) return;
+      piece *moving_piece = game_board->fields[(selected_move & X_START_MASK) >> X_START_OFF ][(selected_move & Y_START_MASK) >> Y_START_OFF];
+      make_move(moving_piece, game_board, selected_move);
+      game_board->who2move = black;
     }
     if(game_board-> who2move == black && player2->type == human)
     {
       move selected_move = select_move(black);
       if(selected_move == 0xFFFF) return;
+      piece *moving_piece = game_board->fields[(selected_move & X_START_MASK) >> X_START_OFF ][(selected_move & Y_START_MASK) >> Y_START_OFF];
+      make_move(moving_piece, game_board, selected_move);
+      game_board->who2move = white;
     }
     else
     {

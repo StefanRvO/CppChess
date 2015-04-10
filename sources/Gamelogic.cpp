@@ -52,7 +52,8 @@ static void find_pseudo_legal_pawn_moves(piece *this_piece, board *game_board, s
   {
     if(this_piece->moves == 0) //first move
     {
-      if(game_board->fields[this_piece->x_pos][this_piece->y_pos + 2] == nullptr) //don't need boundchecking here
+      if(game_board->fields[this_piece->x_pos][this_piece->y_pos + 2] == nullptr &&
+          game_board->fields[this_piece->x_pos][this_piece->y_pos + 1] == nullptr) //don't need boundchecking here
         moves->push_back(this_piece->x_pos << X_START_OFF | this_piece->x_pos << X_END_OFF |
               this_piece->y_pos << Y_START_OFF | (this_piece->y_pos + 2) << Y_END_OFF |
               DOUBLEPAWN );
@@ -150,7 +151,8 @@ static void find_pseudo_legal_pawn_moves(piece *this_piece, board *game_board, s
   {
     if(this_piece->moves == 0) //first move
     {
-      if(game_board->fields[this_piece->x_pos][this_piece->y_pos - 2] == nullptr) //don't need boundchecking here
+      if(game_board->fields[this_piece->x_pos][this_piece->y_pos - 2] == nullptr &&
+          game_board->fields[this_piece->x_pos][this_piece->y_pos - 1] == nullptr) //don't need boundchecking here
         moves->push_back(this_piece->x_pos << X_START_OFF | this_piece->x_pos << X_END_OFF |
               this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 2) << Y_END_OFF |
               DOUBLEPAWN );
@@ -232,9 +234,9 @@ static void find_pseudo_legal_pawn_moves(piece *this_piece, board *game_board, s
       if(this_piece->x_pos != 7) //right capture
       {
         if(game_board->fields[this_piece->x_pos + 1][this_piece->y_pos - 1] != nullptr &&
-         game_board->fields[this_piece->x_pos + 1][this_piece->y_pos - 1]-> colour == black)
+         game_board->fields[this_piece->x_pos + 1][this_piece->y_pos - 1]-> colour == white)
         {
-          moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos - 1) << X_END_OFF |
+          moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos + 1) << X_END_OFF |
                 this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
                 CAPTURE );
         }
@@ -274,3 +276,85 @@ static void find_pseudo_legal_king_moves(piece *this_piece, board *game_board, s
 {
 
 } */
+
+void make_move(piece *moving_piece, board *game_board, move the_move)
+{ //assume only valide moves are given. Just obey it mindlessly
+  uint8_t move_end_x = (the_move & X_END_MASK) >> X_END_OFF;
+  uint8_t move_end_y  = (the_move & Y_END_MASK) >> Y_END_OFF;
+  uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
+  uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
+
+  uint8_t move_type = the_move & MOVE_TYPE_MASK;
+  switch(move_type)
+  {
+    case QUIET: case DOUBLEPAWN:
+      //Just move the piece and update game_board
+      moving_piece->move_to(move_end_x, move_end_y);
+      game_board->fields[move_start_x][move_start_y] = nullptr;
+      game_board->fields[move_end_x][move_end_y] = moving_piece;
+      break;
+    case CAPTURE: //set captured piece to dead, and move det capturing piece to the new field
+      moving_piece->move_to(move_end_x, move_end_y);
+      game_board->fields[move_start_x][move_start_y] = nullptr;
+      game_board->fields[move_end_x][move_end_y]->alive = false;
+      game_board->fields[move_end_x][move_end_y] = moving_piece;
+      break;
+    case QUEENPROMO_CAP:  //same as capture, but with promo
+      moving_piece->move_to(move_end_x, move_end_y);
+      game_board->fields[move_start_x][move_start_y] = nullptr;
+      game_board->fields[move_end_x][move_end_y]->alive = false;
+      game_board->fields[move_end_x][move_end_y] = moving_piece;
+      moving_piece->change_type(queen);
+      break;
+    case KNIGHTPROMO_CAP: //same as capture, but with promo
+      moving_piece->move_to(move_end_x, move_end_y);
+      game_board->fields[move_start_x][move_start_y] = nullptr;
+      game_board->fields[move_end_x][move_end_y]->alive = false;
+      game_board->fields[move_end_x][move_end_y] = moving_piece;
+      moving_piece->change_type(knight);
+      break;
+    case ROOKPROMO_CAP:   //same as capture, but with promo
+      moving_piece->move_to(move_end_x, move_end_y);
+      game_board->fields[move_start_x][move_start_y] = nullptr;
+      game_board->fields[move_end_x][move_end_y]->alive = false;
+      game_board->fields[move_end_x][move_end_y] = moving_piece;
+      moving_piece->change_type(rook);
+      break;
+    case BISHOPPROMO_CAP: //same as capture, but with promo
+      moving_piece->move_to(move_end_x, move_end_y);
+      game_board->fields[move_start_x][move_start_y] = nullptr;
+      game_board->fields[move_end_x][move_end_y]->alive = false;
+      game_board->fields[move_end_x][move_end_y] = moving_piece;
+      moving_piece->change_type(bishop);
+      break;
+    case QUEENPROMO:      //same as quiet, but with promo
+      moving_piece->move_to(move_end_x, move_end_y);
+      game_board->fields[move_start_x][move_start_y] = nullptr;
+      game_board->fields[move_end_x][move_end_y] = moving_piece;
+      moving_piece->change_type(queen);
+      break;
+    case KNIGHTPROMO:     //same as quiet, but with promo
+      moving_piece->move_to(move_end_x, move_end_y);
+      game_board->fields[move_start_x][move_start_y] = nullptr;
+      game_board->fields[move_end_x][move_end_y] = moving_piece;
+      moving_piece->change_type(knight);
+      break;
+    case ROOKPROMO:       //same as quiet, but with promo
+      moving_piece->move_to(move_end_x, move_end_y);
+      game_board->fields[move_start_x][move_start_y] = nullptr;
+      game_board->fields[move_end_x][move_end_y] = moving_piece;
+      moving_piece->change_type(rook);
+      break;
+    case BISHOPPROMO:     //same as quiet, but with promo
+      moving_piece->move_to(move_end_x, move_end_y);
+      game_board->fields[move_start_x][move_start_y] = nullptr;
+      game_board->fields[move_end_x][move_end_y] = moving_piece;
+      moving_piece->change_type(bishop);
+      break;
+    case RIGHTCASTLE:
+      break;
+    case LEFTCASTLE:
+      break;
+  }
+
+}
