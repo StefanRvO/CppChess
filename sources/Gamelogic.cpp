@@ -115,6 +115,9 @@ bool is_under_attack(uint8_t x, uint8_t y, board *game_board, player_colour colo
       return true;
   }
 
+  /*****************************************************/
+
+
   //check for knights
   for(int8_t i = -2; i <= 2; i++)
   {
@@ -132,6 +135,9 @@ bool is_under_attack(uint8_t x, uint8_t y, board *game_board, player_colour colo
     }
   }
 
+  /*****************************************************/
+
+
   //check for king
   for(int8_t i = -1; i <= 1; i++)
   {
@@ -148,8 +154,10 @@ bool is_under_attack(uint8_t x, uint8_t y, board *game_board, player_colour colo
         return true;
     }
   }
-  //check for pawn
 
+  /*****************************************************/
+
+  //check for pawn
   if(colour == black)
   { //white pawns move towards 7
     if(int8_t(x) - 1 >= 0 && int8_t(y) - 1 >= 0 && game_board->fields[x - 1][y - 1] != nullptr &&
@@ -170,6 +178,8 @@ bool is_under_attack(uint8_t x, uint8_t y, board *game_board, player_colour colo
   }
   return false;
 }
+
+
 /* This function generates all moves
 ** without considering if the moves
 ** will make it's own king chess. */
@@ -641,6 +651,80 @@ static void find_pseudo_legal_king_moves(piece *this_piece, board *game_board, s
       }
     }
   }
+
+  //castling
+  if(this_piece->moves == 0)
+  {
+    uint8_t y_pos;
+    if(this_piece->colour == white) y_pos = 0;
+    else                            y_pos = 7;
+    //queenside
+    if(game_board->fields[ROOK_0][y_pos] != nullptr && game_board->fields[ROOK_0][y_pos]->moves == 0)
+    {
+      //check if fields between king and rook is empty
+      bool empty = true;
+      for(uint8_t i = ROOK_0 + 1; i < KING; i++)
+      {
+        if(game_board->fields[i][y_pos] != nullptr )
+        {
+          empty = false;
+          break;
+        }
+      }
+      if(empty)
+      {
+        //check if king, or fields between king and rook is under attack
+        bool attacked = false;
+        for(uint8_t i = ROOK_0 + 1; i <= KING; i++)
+        {
+          if(is_under_attack(i, y_pos, game_board, this_piece->colour))
+          {
+            attacked = true;
+            break;
+          }
+          if(!attacked)
+          { //castling is allowed
+            moves->push_back(this_piece->x_pos << X_START_OFF | (ROOK_0 + 2) << X_END_OFF |
+              this_piece->y_pos << Y_START_OFF | this_piece->y_pos << Y_END_OFF |
+              QUEEN_SIDE_CASTLE );
+          }
+        }
+      }
+    }
+    //kingside
+    if(game_board->fields[ROOK_1][y_pos] != nullptr && game_board->fields[ROOK_1][y_pos]->moves == 0)
+    {
+      //check if fields between king and rook is empty
+      bool empty = true;
+      for(uint8_t i = ROOK_1 - 1; i > KING; i--)
+      {
+        if(game_board->fields[i][y_pos] != nullptr )
+        {
+          empty = false;
+          break;
+        }
+      }
+      if(empty)
+      {
+        //check if king, or fields between king and rook is under attack
+        bool attacked = false;
+        for(uint8_t i = ROOK_1 - 1; i >= KING; i--)
+        {
+          if(is_under_attack(i, y_pos, game_board, this_piece->colour))
+          {
+            attacked = true;
+            break;
+          }
+          if(!attacked)
+          { //castling is allowed
+            moves->push_back(this_piece->x_pos << X_START_OFF | (ROOK_1 - 1) << X_END_OFF |
+              this_piece->y_pos << Y_START_OFF | this_piece->y_pos << Y_END_OFF |
+              KING_SIDE_CASTLE );
+          }
+        }
+      }
+    }
+  }
 }
 
 void make_move(piece *moving_piece, board *game_board, move the_move)
@@ -718,8 +802,20 @@ void make_move(piece *moving_piece, board *game_board, move the_move)
       moving_piece->change_type(bishop);
       break;
     case QUEEN_SIDE_CASTLE:
+      moving_piece->move_to(move_end_x, move_end_y);
+      game_board->fields[move_start_x][move_start_y] = nullptr;
+      game_board->fields[move_end_x][move_end_y] = moving_piece;
+      game_board->fields[ROOK_0 + 3][move_end_y] = game_board->fields[ROOK_0][move_end_y];
+      game_board->fields[ROOK_0][move_end_y] = nullptr;
+      game_board->fields[ROOK_0 + 3][move_end_y]->x_pos = ROOK_0 + 3;
       break;
     case KING_SIDE_CASTLE:
+      moving_piece->move_to(move_end_x, move_end_y);
+      game_board->fields[move_start_x][move_start_y] = nullptr;
+      game_board->fields[move_end_x][move_end_y] = moving_piece;
+      game_board->fields[ROOK_1 - 2][move_end_y] = game_board->fields[ROOK_1][move_end_y];
+      game_board->fields[ROOK_1][move_end_y] = nullptr;
+      game_board->fields[ROOK_1 - 2][move_end_y]->x_pos = ROOK_1 - 2;
       break;
   }
 
