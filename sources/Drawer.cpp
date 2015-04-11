@@ -170,7 +170,7 @@ move drawer::select_move(player_colour player_to_select)
             x = event.button.x;
 
             //find the pressed field.
-            int field_y = float(y) / w * 8;
+            int field_y = (7 - int(float(y) / w * 8));
             int field_x = float(x) / h * 8;
 
             //check if pressed field is in possible moves.
@@ -232,7 +232,7 @@ void drawer::draw_possible_moves_board(std::vector<move> *possible_moves)
     SDL_SetRenderDrawColor(renderer, SELECTED_PIECE_COLOUR);
     SDL_Rect r;
     r.x = w / 8 * x_pos;
-    r.y = h / 8 * y_pos;
+    r.y = h / 8 * (7 - y_pos);
     r.w = w / 8;
     r.h = h / 8;
     SDL_RenderFillRect( renderer, &r );
@@ -255,7 +255,7 @@ void drawer::draw_possible_moves_board(std::vector<move> *possible_moves)
       SDL_SetRenderDrawColor(renderer, PROMO_MOVE_COLOUR);
     SDL_Rect r;
     r.x = w / 8 * move_x;
-    r.y = h / 8 * move_y;
+    r.y = h / 8 * (7 - move_y);
     r.w = w / 8;
     r.h = h / 8;
     SDL_RenderFillRect( renderer, &r );
@@ -356,7 +356,7 @@ void drawer::draw_board()
 
       SDL_Rect r;
       r.x = w / 8 * i;
-      r.y = h / 8 * j;
+      r.y = h / 8 * (7 - j);
       r.w = w / 8;
       r.h = h / 8;
       SDL_RenderFillRect( renderer, &r );
@@ -391,7 +391,7 @@ void drawer::draw_piece(piece *this_piece, TextDrawer *TDrawer, int w, int h)
   }
   //std::cout << (int)this_piece->x_pos << " " << (int)this_piece->y_pos << std::endl;
   if(this_piece->colour == white)
-    TDrawer->DrawText(renderer, piece_string.c_str(), w / 8 * this_piece->x_pos + w / 35, h / 8 * this_piece->y_pos, WHITE_PIECE);
+    TDrawer->DrawText(renderer, piece_string.c_str(), w / 8 * this_piece->x_pos + w / 35, h / 8 * (7 - this_piece->y_pos), WHITE_PIECE);
   else
-    TDrawer->DrawText(renderer, piece_string.c_str(), w / 8 * this_piece->x_pos + w / 35, h / 8 * this_piece->y_pos, BLACK_PIECE);
+    TDrawer->DrawText(renderer, piece_string.c_str(), w / 8 * this_piece->x_pos + w / 35, h / 8 * (7 - this_piece->y_pos), BLACK_PIECE);
 }
