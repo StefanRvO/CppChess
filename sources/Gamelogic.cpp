@@ -1,5 +1,6 @@
 #include "../headers/Gamelogic.h"
 #include <cstdlib>
+#include <iostream>
 
 static void find_pseudo_legal_pawn_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
 
@@ -13,9 +14,70 @@ static void find_pseudo_legal_queen_moves(piece *this_piece, board *game_board, 
 
 static void find_pseudo_legal_king_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
 
-void find_legal_moves(piece *this_piece, player __attribute__((unused)) *this_player, player __attribute__((unused)) *opponent, board *game_board, std::vector<move> *moves)
+void find_legal_moves(piece *this_piece, player *this_player, board *game_board, std::vector<move> *moves)
 {
-  find_pseudo_legal_moves(this_piece, game_board, moves);
+  std::vector<move> pseudo_legal_moves;
+  pseudo_legal_moves.reserve(20);
+  find_pseudo_legal_moves(this_piece, game_board, &pseudo_legal_moves);
+  std::cout << pseudo_legal_moves.size() << std::endl;
+  for(auto this_move : pseudo_legal_moves)
+  {
+    //save info about move so it can be unmade.
+    piece *targetpiece;
+    uint8_t move_type = this_move & MOVE_TYPE_MASK;
+    uint8_t move_end_x = (this_move & X_END_MASK) >> X_END_OFF;
+    uint8_t move_end_y  = (this_move & Y_END_MASK) >> Y_END_OFF;
+    switch(move_type)
+    {
+      case CAPTURE:
+      case QUEENPROMO_CAP:
+      case KNIGHTPROMO_CAP:
+      case ROOKPROMO_CAP:
+      case BISHOPPROMO_CAP:
+        targetpiece = game_board->fields[move_end_x][move_end_y];
+        break;
+      case QUEEN_SIDE_CASTLE:
+        targetpiece = game_board->fields[ROOK_0][move_end_y];
+        break;
+      case KING_SIDE_CASTLE:
+        targetpiece = game_board->fields[ROOK_1][move_end_y];
+        break;
+    }
+    //make the move
+    make_move(this_piece, game_board, this_move);
+    //check if king is in check
+    if(!is_under_attack(this_player->pieces[KING].x_pos, this_player->pieces[KING].y_pos, game_board, this_player->colour))
+    {
+      moves->push_back(this_move);
+      std::cout << "valid" << std::endl;
+    }
+    else
+    {
+      std::cout << "invalid" << std::endl;
+    }
+
+    //unmake move
+    switch(move_type)
+    {
+      case QUIET:
+      case DOUBLEPAWN:
+      case QUEENPROMO:
+      case KNIGHTPROMO:
+      case ROOKPROMO:
+      case BISHOPPROMO:
+        unmake_move(this_piece, game_board, this_move);
+        break;
+      case CAPTURE:
+      case QUEENPROMO_CAP:
+      case KNIGHTPROMO_CAP:
+      case ROOKPROMO_CAP:
+      case BISHOPPROMO_CAP:
+      case QUEEN_SIDE_CASTLE:
+      case KING_SIDE_CASTLE:
+        unmake_move(this_piece, game_board, this_move, targetpiece);
+        break;
+    }
+  }
 }
 
 bool is_under_attack(uint8_t x, uint8_t y, board *game_board, player_colour colour)
@@ -817,6 +879,90 @@ void make_move(piece *moving_piece, board *game_board, move the_move)
       game_board->fields[ROOK_1][move_end_y] = nullptr;
       game_board->fields[ROOK_1 - 2][move_end_y]->x_pos = ROOK_1 - 2;
       break;
+  }
+}
+
+void unmake_move(piece *moving_piece, board *game_board, move the_move, piece *second_piece)
+{  //unmakes a move. a second piece can be giving if the move affected two pieces (captures, castling)
+  //the moves which affects two pieces are castling and captures.
+
+  uint8_t move_end_x = (the_move & X_END_MASK) >> X_END_OFF;
+  uint8_t move_end_y  = (the_move & Y_END_MASK) >> Y_END_OFF;
+  uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
+  uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
+
+  uint8_t move_type = the_move & MOVE_TYPE_MASK;
+
+  switch(move_type)
+  {
+    case CAPTURE:
+      moving_piece->move_back_to(move_start_x, move_start_y);
+      game_board->fields[move_start_x][move_start_y] = moving_piece;
+      game_board->fields[move_end_x][move_end_y] = second_piece;
+      game_board->fields[move_end_x][move_end_y]->alive = false;
+      break;
+    case QUEENPROMO_CAP:
+    case KNIGHTPROMO_CAP:
+    case ROOKPROMO_CAP:
+    case BISHOPPROMO_CAP:
+      moving_piece->move_back_to(move_start_x, move_start_y);
+      game_board->fields[move_start_x][move_start_y] = moving_piece;
+      game_board->fields[move_end_x][move_end_y] = second_piece;
+      game_board->fields[move_end_x][move_end_y]->alive = false;
+      moving_piece->change_type(pawn);
+      break;
+    case QUEEN_SIDE_CASTLE:
+      moving_piece->move_back_to(move_start_x, move_start_y);
+      game_board->fields[move_start_x][move_start_y] = moving_piece;
+      game_board->fields[move_end_x][move_end_y] = nullptr;
+      game_board->fields[ROOK_0 - 2][move_end_y] = nullptr;
+      game_board->fields[ROOK_0][move_end_y] = second_piece;
+      second_piece->x_pos = ROOK_0;
+      break;
+    case KING_SIDE_CASTLE:
+      moving_piece->move_back_to(move_start_x, move_start_y);
+      game_board->fields[move_start_x][move_start_y] = moving_piece;
+      game_board->fields[move_end_x][move_end_y] = nullptr;
+      game_board->fields[ROOK_1 + 3][move_end_y] = nullptr;
+      game_board->fields[ROOK_1][move_end_y] = second_piece;
+      second_piece->x_pos = ROOK_1;
+      break;
+    default:
+      std::cout << "Error in unmake move 1" << std::endl;
+      break;
+  }
+}
+void unmake_move(piece *moving_piece, board *game_board, move the_move)
+{ //the moves which only affects one piece are quiet, doublepawn and promotions.
+
+  uint8_t move_end_x = (the_move & X_END_MASK) >> X_END_OFF;
+  uint8_t move_end_y  = (the_move & Y_END_MASK) >> Y_END_OFF;
+  uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
+  uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
+
+  uint8_t move_type = the_move & MOVE_TYPE_MASK;
+
+  switch(move_type)
+  {
+    case QUIET:
+    case DOUBLEPAWN:
+      moving_piece->move_back_to(move_start_x, move_start_y);
+      game_board->fields[move_start_x][move_start_y] = moving_piece;
+      game_board->fields[move_end_x][move_end_y] = nullptr;
+      break;
+    case QUEENPROMO:
+    case KNIGHTPROMO:
+    case ROOKPROMO:
+    case BISHOPPROMO:
+      moving_piece->move_back_to(move_start_x, move_start_y);
+      game_board->fields[move_start_x][move_start_y] = moving_piece;
+      game_board->fields[move_end_x][move_end_y] = nullptr;
+      moving_piece->change_type(pawn);
+      break;
+    default:
+      std::cout << "Error in unmake move 2" << std::endl;
+      break;
+
   }
 
 }

@@ -200,9 +200,9 @@ move drawer::select_move(player_colour player_to_select)
               {
                 possible_moves.clear();
                 if(player_to_select == white)
-                  find_legal_moves(game_board->fields[field_x][field_y], player1, player2, game_board, &possible_moves);
+                  find_legal_moves(game_board->fields[field_x][field_y], player1, game_board, &possible_moves);
                 else
-                  find_legal_moves(game_board->fields[field_x][field_y], player2, player1, game_board, &possible_moves);
+                  find_legal_moves(game_board->fields[field_x][field_y], player2, game_board, &possible_moves);
               }
             }
           }
@@ -262,7 +262,6 @@ void drawer::draw_possible_moves_board(std::vector<move> *possible_moves)
   }
 }
 
-
 void drawer::loop()
 {
   while(!stop)
@@ -278,6 +277,7 @@ void drawer::loop()
         std::cout << "white king is chess" << std::endl;
       }
       game_board->who2move = black;
+
     }
     if(game_board-> who2move == black && player2->type == human)
     {
