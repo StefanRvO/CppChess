@@ -10,13 +10,165 @@ static void find_pseudo_legal_rook_moves(piece *this_piece, board *game_board, s
 static void find_pseudo_legal_bishop_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
 
 static void find_pseudo_legal_queen_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
-/*
+
 static void find_pseudo_legal_king_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
 
-*/
 void find_legal_moves(piece *this_piece, player __attribute__((unused)) *this_player, player __attribute__((unused)) *opponent, board *game_board, std::vector<move> *moves)
 {
   find_pseudo_legal_moves(this_piece, game_board, moves);
+}
+
+bool is_under_attack(uint8_t x, uint8_t y, board *game_board, player_colour colour)
+{
+  //search for bishop and queen which can attack this field.
+  for(int8_t i = 1; i + x <= 7 && i + y <= 7; i++)
+  {
+    if(game_board->fields[i + x][i + y] == nullptr)
+      continue;
+    if(game_board->fields[i + x][i + y]->colour == colour || (game_board->fields[i + x][i + y]->type != bishop &&
+        game_board->fields[i + x][i + y]->type != queen))
+      break;
+    else if(game_board->fields[i + x][i + y]->type == bishop || game_board->fields[i + x][i + y]->type == queen)
+      return true;
+  }
+  //right down
+  for(int8_t i = -1; i + x >= 0 && i + y >0; i--)
+  {
+    if(game_board->fields[i + x][i + y] == nullptr)
+      continue;
+    if(game_board->fields[i + x][i + y]->colour == colour || (game_board->fields[i + x][i + y]->type != bishop &&
+        game_board->fields[i + x][i + y]->type != queen))
+      break;
+    else if(game_board->fields[i + x][i + y]->type == bishop || game_board->fields[i + x][i + y]->type == queen)
+      return true;
+  }
+  //right up
+  for(int8_t i = 1; i + x <= 7 && y - i >= 0 ; i++)
+  {
+    if(game_board->fields[x + i][y - i] == nullptr)
+      continue;
+    if(game_board->fields[i + x][y - i]->colour == colour || (game_board->fields[i + x][y - i]->type != bishop &&
+        game_board->fields[i + x][y - i]->type != queen))
+      break;
+    else if(game_board->fields[i + x][y - i]->type == bishop || game_board->fields[i + x][y - i]->type == queen)
+      return true;
+  }
+  //down left
+  for(int8_t i = -1; i + x >= 0 && y - i <= 7 ; i--)
+  {
+    if(game_board->fields[x + i][y - i] == nullptr)
+      continue;
+    if(game_board->fields[i + x][y - i]->colour == colour || (game_board->fields[i + x][y - i]->type != bishop &&
+        game_board->fields[i + x][y - i]->type != queen))
+      break;
+    else if(game_board->fields[i + x][y - i]->type == bishop || game_board->fields[i + x][y - i]->type == queen)
+      return true;
+  }
+
+
+
+  /*****************************************************/
+  //search for rook and queen
+
+  //left
+  for(int8_t i = 1; i + x <= 7; i++)
+  {
+    if(game_board->fields[i + x][y] == nullptr)
+      continue;
+    if(game_board->fields[i + x][y]->colour == colour || (game_board->fields[i + x][y]->type != rook &&
+        game_board->fields[i + x][y]->type != queen))
+      break;
+    else if(game_board->fields[i + x][y]->type == rook || game_board->fields[i + x][y]->type == queen)
+      return true;
+  }
+  //right
+  for(int8_t i = -1; i + x >= 0; i--)
+  {
+    if(game_board->fields[i + x][y] == nullptr)
+      continue;
+    if(game_board->fields[i + x][y]->colour == colour || (game_board->fields[i + x][y]->type != rook &&
+        game_board->fields[i + x][y]->type != queen))
+      break;
+    else if(game_board->fields[i + x][y]->type == rook || game_board->fields[i + x][y]->type == queen)
+      return true;
+  }
+  //up
+  for(int8_t i = 1; i + y <= 7; i++)
+  {
+    if(game_board->fields[x][y + i] == nullptr)
+      continue;
+    if(game_board->fields[x][y + i]->colour == colour || (game_board->fields[x][y + i]->type != rook &&
+        game_board->fields[x][y + i]->type != queen))
+      break;
+    else if(game_board->fields[x][y + i]->type == rook || game_board->fields[x][y + i]->type == queen)
+      return true;
+  }
+  //down
+  for(int8_t i = -1; i + y >= 0; i--)
+  {
+    if(game_board->fields[x][y + i] == nullptr)
+      continue;
+    if(game_board->fields[x][y + i]->colour == colour || (game_board->fields[x][y + i]->type != rook &&
+        game_board->fields[x][y + i]->type != queen))
+      break;
+    else if(game_board->fields[x][y + i]->type == rook || game_board->fields[x][y + i]->type == queen)
+      return true;
+  }
+
+  //check for knights
+  for(int8_t i = -2; i <= 2; i++)
+  {
+    if(i == 0) continue;
+    for(int8_t j = -2; j <= 2; j++)
+    {
+      if(j==0 || abs(i) == abs(j)) continue;
+      if(x + i >= 0 && x + i <= 7 && y + j >= 0 && y + j <= 7)
+      {
+        if(game_board->fields[x + i][y + j] == nullptr)
+          continue;
+        else if (game_board->fields[x + i][y + j]->type == knight && game_board->fields[x + i][y + j]-> colour != colour)
+          return true;
+      }
+    }
+  }
+
+  //check for king
+  for(int8_t i = -1; i <= 1; i++)
+  {
+    if(x + i < 0) continue;
+    if(x + i > 7) break;
+    for(int8_t j = -1; j <= 1; j++)
+    {
+      if(y + j < 0) continue;
+      if(y + j > 7) break;
+      if(j == 0 && i == 0) continue;
+      if(game_board->fields[x + i][y + j] == nullptr)
+        continue;
+      else if(game_board->fields[x + i][y + j]->type == king && game_board->fields[x + i][y + j]->colour != colour)
+        return true;
+    }
+  }
+  //check for pawn
+
+  if(colour == black)
+  { //white pawns move towards 7
+    if(int8_t(x) - 1 >= 0 && int8_t(y) - 1 >= 0 && game_board->fields[x - 1][y - 1] != nullptr &&
+        game_board->fields[x - 1][y - 1]->type == pawn && game_board->fields[x - 1][y - 1]->colour == white)
+      return true;
+    if(x + 1 <= 7 && int8_t(y) - 1 >= 0 && game_board->fields[x + 1][y - 1] != nullptr &&
+        game_board->fields[x + 1][y - 1]->type == pawn && game_board->fields[x + 1][y - 1]->colour == white)
+      return true;
+  }
+  else
+  { //black pawns moves towards 0
+    if(int8_t(x) - 1 >= 0 && y + 1 <= 7 && game_board->fields[x - 1][y + 1] != nullptr &&
+        game_board->fields[x - 1][y + 1]->type == pawn && game_board->fields[x - 1][y + 1]->colour == black)
+      return true;
+    if(x + 1 <= 7 && y + 1 <= 7 && game_board->fields[x + 1][y + 1] != nullptr &&
+        game_board->fields[x + 1][y + 1]->type == pawn && game_board->fields[x + 1][y + 1]->colour == black)
+      return true;
+  }
+  return false;
 }
 /* This function generates all moves
 ** without considering if the moves
@@ -39,10 +191,10 @@ void find_pseudo_legal_moves(piece *this_piece, board *game_board, std::vector<m
       break;
   	case queen:
       find_pseudo_legal_queen_moves(this_piece, game_board, moves);
-  	  break;/*
+  	  break;
   	case king:
       find_pseudo_legal_king_moves(this_piece, game_board, moves);
-      break;*/
+      break;
     default:
       break;
   }
@@ -461,11 +613,35 @@ static void find_pseudo_legal_bishop_moves(piece *this_piece, board *game_board,
 
 /* This function generates all moves for a king
 ** without considering if the moves
-** will make it chess.
+** will make it chess. */
 static void find_pseudo_legal_king_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
 {
-
-} */
+  int x = this_piece->x_pos;
+  int y = this_piece->y_pos;
+  for(int8_t i = -1; i <= 1; i++)
+  {
+    if(x + i < 0) continue;
+    if(x + i > 7) break;
+    for(int8_t j = -1; j <= 1; j++)
+    {
+      if(y + j < 0) continue;
+      if(y + j > 7) break;
+      if(j == 0 && i == 0) continue;
+    if(game_board->fields[x + i][y + j] == nullptr)
+      {
+        moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
+          this_piece->y_pos << Y_START_OFF | uint8_t(y + j) << Y_END_OFF |
+          QUIET );
+      }
+      else if(game_board->fields[x + i][y + j]->colour != this_piece->colour)
+      {
+        moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
+          this_piece->y_pos << Y_START_OFF | uint8_t(y + j) << Y_END_OFF |
+          CAPTURE );
+      }
+    }
+  }
+}
 
 void make_move(piece *moving_piece, board *game_board, move the_move)
 { //assume only valide moves are given. Just obey it mindlessly

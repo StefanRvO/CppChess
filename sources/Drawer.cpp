@@ -3,6 +3,7 @@
 #include <string>
 #include "../headers/Gamelogic.h"
 #include "../headers/Move.h"
+#include <cstdlib>
 drawer::drawer(player *white_player, player *black_player, board *game_board_)
 :timer(Timer(DRAWFPS))
 {
@@ -113,10 +114,10 @@ move drawer::choose_promotion(move base_move)
     std::string piece_string;
     for(int i = 2; i <= 5; i++)
     {
-      if(i == 2)      SDL_SetRenderDrawColor(renderer, QUEEN_PROMO_SELECT);
-      else if(i == 3) SDL_SetRenderDrawColor(renderer, KNIGHT_PROMO_SELECT);
-      else if(i == 4) SDL_SetRenderDrawColor(renderer, ROOK_PROMO_SELECT);
-      else if(i == 5) SDL_SetRenderDrawColor(renderer, BISHOP_PROMO_SELECT);
+      if(i == 2)      SDL_SetRenderDrawColor(renderer, rand()%256, rand()%256, rand()%256, 255 );
+      else if(i == 3) SDL_SetRenderDrawColor(renderer, rand()%256, rand()%256, rand()%256, 255);
+      else if(i == 4) SDL_SetRenderDrawColor(renderer, rand()%256, rand()%256, rand()%256, 255);
+      else if(i == 5) SDL_SetRenderDrawColor(renderer, rand()%256, rand()%256, rand()%256, 255);
 
       SDL_Rect r;
       r.x = w / 8 * i;
@@ -128,7 +129,7 @@ move drawer::choose_promotion(move base_move)
       switch(i)
       {
         case 2: piece_string = "Q"; break;
-        case 3: piece_string = "K"; break;
+        case 3: piece_string = "H"; break;
         case 4: piece_string = "T"; break;
         case 5: piece_string = "R"; break;
       }
@@ -187,11 +188,7 @@ move drawer::select_move(player_colour player_to_select)
                     || move_type == ROOKPROMO_CAP || move_type == BISHOPPROMO_CAP)
                     {
                       //show promotion dialog
-                      std::cout << move_type << std::endl;
-                      std::cout << this_move << std::endl;
                       this_move = choose_promotion(this_move);
-                      std::cout << this_move << std::endl;
-
                     }
                   return this_move;
               }
@@ -276,6 +273,10 @@ void drawer::loop()
       if(selected_move == 0xFFFF) return;
       piece *moving_piece = game_board->fields[(selected_move & X_START_MASK) >> X_START_OFF ][(selected_move & Y_START_MASK) >> Y_START_OFF];
       make_move(moving_piece, game_board, selected_move);
+      if(is_under_attack(player1->pieces[KING].x_pos, player1->pieces[KING].y_pos, game_board, white ))
+      {
+        std::cout << "white king is chess" << std::endl;
+      }
       game_board->who2move = black;
     }
     if(game_board-> who2move == black && player2->type == human)
@@ -284,6 +285,11 @@ void drawer::loop()
       if(selected_move == 0xFFFF) return;
       piece *moving_piece = game_board->fields[(selected_move & X_START_MASK) >> X_START_OFF ][(selected_move & Y_START_MASK) >> Y_START_OFF];
       make_move(moving_piece, game_board, selected_move);
+      if(is_under_attack(player2->pieces[KING].x_pos, player2->pieces[KING].y_pos, game_board, black ))
+      {
+        std::cout << "black king is chess" << std::endl;
+      }
+
       game_board->who2move = white;
     }
     else
