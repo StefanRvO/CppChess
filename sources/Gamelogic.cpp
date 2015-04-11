@@ -14,12 +14,40 @@ static void find_pseudo_legal_queen_moves(piece *this_piece, board *game_board, 
 
 static void find_pseudo_legal_king_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
 
+
+bool isChess(player *this_player, board *game_board)
+{
+  return is_under_attack(this_player->pieces[KING].x_pos, this_player->pieces[KING].y_pos, game_board, this_player->colour);
+}
+
+int CheckChessMate(player *this_player, board *game_board)
+{ //returns 0 for no chessmate or stalemate, 1 for chessmate and 2 for stalemate
+
+  //check if there are any possible moves
+  for(uint8_t i = 0; i < 15; i++)
+  {
+    if(this_player->pieces[i].alive)
+    {
+      std::vector<move> possible_moves;
+      possible_moves.reserve(8);
+      find_legal_moves(&(this_player->pieces[i]), this_player, game_board, &possible_moves);
+      if(possible_moves.size())
+      {
+        return false;
+      }
+    }
+
+  }
+  //there is no possible moves. if the king is in check, we are chessmate, else stalemate
+  if(isChess(this_player, game_board)) return 1;
+  else                                 return 2;
+}
+
 void find_legal_moves(piece *this_piece, player *this_player, board *game_board, std::vector<move> *moves)
 {
   std::vector<move> pseudo_legal_moves;
   pseudo_legal_moves.reserve(20);
   find_pseudo_legal_moves(this_piece, game_board, &pseudo_legal_moves);
-  std::cout << pseudo_legal_moves.size() << std::endl;
   for(auto this_move : pseudo_legal_moves)
   {
     //save info about move so it can be unmade.
@@ -46,15 +74,11 @@ void find_legal_moves(piece *this_piece, player *this_player, board *game_board,
     //make the move
     make_move(this_piece, game_board, this_move);
     //check if king is in check
-    if(!is_under_attack(this_player->pieces[KING].x_pos, this_player->pieces[KING].y_pos, game_board, this_player->colour))
+    if(!isChess(this_player, game_board))
     {
       moves->push_back(this_move);
-      std::cout << "valid" << std::endl;
     }
-    else
-    {
-      std::cout << "invalid" << std::endl;
-    }
+
 
     //unmake move
     switch(move_type)
@@ -94,7 +118,7 @@ bool is_under_attack(uint8_t x, uint8_t y, board *game_board, player_colour colo
       return true;
   }
   //right down
-  for(int8_t i = -1; i + x >= 0 && i + y >0; i--)
+  for(int8_t i = -1; i + x >= 0 && i + y >= 0; i--)
   {
     if(game_board->fields[i + x][i + y] == nullptr)
       continue;
@@ -624,7 +648,7 @@ static void find_pseudo_legal_bishop_moves(piece *this_piece, board *game_board,
     }
   }
   //right down
-  for(int8_t i = -1; i + x >= 0 && i + y >0; i--)
+  for(int8_t i = -1; i + x >= 0 && i + y >= 0; i--)
   {
     if(game_board->fields[i + x][i + y] == nullptr)
     {

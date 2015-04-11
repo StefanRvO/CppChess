@@ -272,12 +272,17 @@ void drawer::loop()
       if(selected_move == 0xFFFF) return;
       piece *moving_piece = game_board->fields[(selected_move & X_START_MASK) >> X_START_OFF ][(selected_move & Y_START_MASK) >> Y_START_OFF];
       make_move(moving_piece, game_board, selected_move);
-      if(is_under_attack(player1->pieces[KING].x_pos, player1->pieces[KING].y_pos, game_board, white ))
-      {
-        std::cout << "white king is chess" << std::endl;
-      }
       game_board->who2move = black;
-
+      int chess_status = CheckChessMate(player2, game_board);
+      switch(chess_status)
+      {
+        case IS_CHESSMATE:
+          std::cout << "white is checkmate" << std::endl;
+          break;
+        case IS_STALEMATE:
+          std::cout << "stalemate" << std::endl;
+          break;
+      }
     }
     if(game_board-> who2move == black && player2->type == human)
     {
@@ -285,30 +290,32 @@ void drawer::loop()
       if(selected_move == 0xFFFF) return;
       piece *moving_piece = game_board->fields[(selected_move & X_START_MASK) >> X_START_OFF ][(selected_move & Y_START_MASK) >> Y_START_OFF];
       make_move(moving_piece, game_board, selected_move);
-      if(is_under_attack(player2->pieces[KING].x_pos, player2->pieces[KING].y_pos, game_board, black ))
-      {
-        std::cout << "black king is chess" << std::endl;
-      }
-
       game_board->who2move = white;
-    }
-    else
-    {
-      SDL_Event event; //grab events
-      while(SDL_PollEvent(&event))
+      int chess_status = CheckChessMate(player1, game_board);
+      switch(chess_status)
       {
-        switch (event.type)
-        {
-          case SDL_QUIT:
-            return;
-            break;
-        }
+        case IS_CHESSMATE:
+          std::cout << "white is checkmate" << std::endl;
+          break;
+        case IS_STALEMATE:
+          std::cout << "stalemate" << std::endl;
+          break;
       }
-      draw_board();
-      draw_pieces();
-      SDL_RenderPresent(renderer);
-      timer.tick();
     }
+    SDL_Event event; //grab events
+    while(SDL_PollEvent(&event))
+    {
+      switch (event.type)
+      {
+        case SDL_QUIT:
+          return;
+          break;
+      }
+    }
+    draw_board();
+    draw_pieces();
+    SDL_RenderPresent(renderer);
+    timer.tick();
   }
 }
 
