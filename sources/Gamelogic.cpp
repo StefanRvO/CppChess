@@ -51,10 +51,10 @@ void find_legal_moves(piece *this_piece, player *this_player, board *game_board,
   for(auto this_move : pseudo_legal_moves)
   {
     //save info about move so it can be unmade.
-    piece *targetpiece;
     uint8_t move_type = this_move & MOVE_TYPE_MASK;
     uint8_t move_end_x = (this_move & X_END_MASK) >> X_END_OFF;
     uint8_t move_end_y  = (this_move & Y_END_MASK) >> Y_END_OFF;
+    piece *targetpiece = game_board->fields[move_end_x][move_end_y];
     switch(move_type)
     {
       case CAPTURE:
@@ -939,7 +939,7 @@ void unmake_move(piece *moving_piece, board *game_board, move the_move, piece *s
       moving_piece->move_back_to(move_start_x, move_start_y);
       game_board->fields[move_start_x][move_start_y] = moving_piece;
       game_board->fields[move_end_x][move_end_y] = nullptr;
-      game_board->fields[ROOK_0 - 2][move_end_y] = nullptr;
+      game_board->fields[second_piece->x_pos][move_end_y] = nullptr;
       game_board->fields[ROOK_0][move_end_y] = second_piece;
       second_piece->x_pos = ROOK_0;
       break;
@@ -947,7 +947,7 @@ void unmake_move(piece *moving_piece, board *game_board, move the_move, piece *s
       moving_piece->move_back_to(move_start_x, move_start_y);
       game_board->fields[move_start_x][move_start_y] = moving_piece;
       game_board->fields[move_end_x][move_end_y] = nullptr;
-      game_board->fields[ROOK_1 + 3][move_end_y] = nullptr;
+      game_board->fields[second_piece->x_pos][move_end_y] = nullptr;
       game_board->fields[ROOK_1][move_end_y] = second_piece;
       second_piece->x_pos = ROOK_1;
       break;

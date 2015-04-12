@@ -56,7 +56,7 @@ void AI::get_best_move_piece(uint8_t pieceid, player *player1, player *player2, 
     uint8_t move_end_y  = (the_move & Y_END_MASK) >> Y_END_OFF;
     uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
     uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
-    piece *targetpiece;
+    piece *targetpiece = game_board_copy.fields[move_end_x][move_end_y];
     piece *moving_piece = game_board_copy.fields[move_start_x][move_start_y];
 
     switch(move_type)
@@ -167,7 +167,7 @@ int32_t AI::negamax(player *white_player, player *black_player, board *the_board
     uint8_t move_end_y  = (the_move & Y_END_MASK) >> Y_END_OFF;
     uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
     uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
-    piece *targetpiece;
+    piece *targetpiece = the_board->fields[move_end_x][move_end_y];
     piece *moving_piece = the_board->fields[move_start_x][move_start_y];
 
     switch(move_type)
