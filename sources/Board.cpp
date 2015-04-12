@@ -10,8 +10,10 @@ board::board(player &white_p, player &black_p)
   }
   for(uint8_t i = 0; i < 16; i++)
   {
-    this->fields[white_p.pieces[i].x_pos][white_p.pieces[i].y_pos] = &(white_p.pieces[i]);
-    this->fields[black_p.pieces[i].x_pos][black_p.pieces[i].y_pos] = &(black_p.pieces[i]);
+    if(white_p.pieces[i].alive)
+      this->fields[white_p.pieces[i].x_pos][white_p.pieces[i].y_pos] = &(white_p.pieces[i]);
+    if(black_p.pieces[i].alive)
+      this->fields[black_p.pieces[i].x_pos][black_p.pieces[i].y_pos] = &(black_p.pieces[i]);
   }
 }
 

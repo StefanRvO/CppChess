@@ -79,7 +79,6 @@ void find_legal_moves(piece *this_piece, player *this_player, board *game_board,
       moves->push_back(this_move);
     }
 
-
     //unmake move
     switch(move_type)
     {
@@ -815,6 +814,7 @@ static void find_pseudo_legal_king_moves(piece *this_piece, board *game_board, s
 
 void make_move(piece *moving_piece, board *game_board, move the_move)
 { //assume only valide moves are given. Just obey it mindlessly
+
   uint8_t move_end_x = (the_move & X_END_MASK) >> X_END_OFF;
   uint8_t move_end_y  = (the_move & Y_END_MASK) >> Y_END_OFF;
   uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
@@ -830,36 +830,36 @@ void make_move(piece *moving_piece, board *game_board, move the_move)
       game_board->fields[move_end_x][move_end_y] = moving_piece;
       break;
     case CAPTURE: //set captured piece to dead, and move det capturing piece to the new field
+      game_board->fields[move_end_x][move_end_y]->alive = false;
       moving_piece->move_to(move_end_x, move_end_y);
       game_board->fields[move_start_x][move_start_y] = nullptr;
-      game_board->fields[move_end_x][move_end_y]->alive = false;
       game_board->fields[move_end_x][move_end_y] = moving_piece;
       break;
     case QUEENPROMO_CAP:  //same as capture, but with promo
+      game_board->fields[move_end_x][move_end_y]->alive = false;
       moving_piece->move_to(move_end_x, move_end_y);
       game_board->fields[move_start_x][move_start_y] = nullptr;
-      game_board->fields[move_end_x][move_end_y]->alive = false;
       game_board->fields[move_end_x][move_end_y] = moving_piece;
       moving_piece->change_type(queen);
       break;
     case KNIGHTPROMO_CAP: //same as capture, but with promo
+      game_board->fields[move_end_x][move_end_y]->alive = false;
       moving_piece->move_to(move_end_x, move_end_y);
       game_board->fields[move_start_x][move_start_y] = nullptr;
-      game_board->fields[move_end_x][move_end_y]->alive = false;
       game_board->fields[move_end_x][move_end_y] = moving_piece;
       moving_piece->change_type(knight);
       break;
     case ROOKPROMO_CAP:   //same as capture, but with promo
+      game_board->fields[move_end_x][move_end_y]->alive = false;
       moving_piece->move_to(move_end_x, move_end_y);
       game_board->fields[move_start_x][move_start_y] = nullptr;
-      game_board->fields[move_end_x][move_end_y]->alive = false;
       game_board->fields[move_end_x][move_end_y] = moving_piece;
       moving_piece->change_type(rook);
       break;
     case BISHOPPROMO_CAP: //same as capture, but with promo
+      game_board->fields[move_end_x][move_end_y]->alive = false;
       moving_piece->move_to(move_end_x, move_end_y);
       game_board->fields[move_start_x][move_start_y] = nullptr;
-      game_board->fields[move_end_x][move_end_y]->alive = false;
       game_board->fields[move_end_x][move_end_y] = moving_piece;
       moving_piece->change_type(bishop);
       break;
@@ -923,7 +923,7 @@ void unmake_move(piece *moving_piece, board *game_board, move the_move, piece *s
       moving_piece->move_back_to(move_start_x, move_start_y);
       game_board->fields[move_start_x][move_start_y] = moving_piece;
       game_board->fields[move_end_x][move_end_y] = second_piece;
-      game_board->fields[move_end_x][move_end_y]->alive = true;
+      second_piece->alive = true;
       break;
     case QUEENPROMO_CAP:
     case KNIGHTPROMO_CAP:
@@ -932,7 +932,7 @@ void unmake_move(piece *moving_piece, board *game_board, move the_move, piece *s
       moving_piece->move_back_to(move_start_x, move_start_y);
       game_board->fields[move_start_x][move_start_y] = moving_piece;
       game_board->fields[move_end_x][move_end_y] = second_piece;
-      game_board->fields[move_end_x][move_end_y]->alive = true;
+      second_piece->alive = true;
       moving_piece->change_type(pawn);
       break;
     case QUEEN_SIDE_CASTLE:
@@ -958,7 +958,6 @@ void unmake_move(piece *moving_piece, board *game_board, move the_move, piece *s
 }
 void unmake_move(piece *moving_piece, board *game_board, move the_move)
 { //the moves which only affects one piece are quiet, doublepawn and promotions.
-
   uint8_t move_end_x = (the_move & X_END_MASK) >> X_END_OFF;
   uint8_t move_end_y  = (the_move & Y_END_MASK) >> Y_END_OFF;
   uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
@@ -988,5 +987,61 @@ void unmake_move(piece *moving_piece, board *game_board, move the_move)
       break;
 
   }
+}
 
+std::string get_board_string(board *game_board)
+{
+  std::string boardstr;
+  for(uint8_t i = 0; i <= 7; i++)
+  {
+      for(uint8_t j = 0; j <= 7; j++)
+      {
+        if(game_board->fields[j][i] != nullptr && game_board->fields[j][i]->alive)
+        {
+          switch(game_board->fields[j][i]->type)
+          {
+            case pawn:
+              boardstr += "P"; break;
+            case bishop:
+              boardstr += "R"; break;
+            case king:
+              boardstr += "K"; break;
+            case queen:
+              boardstr += "Q"; break;
+            case rook:
+              boardstr += "T"; break;
+            case knight:
+              boardstr += "H"; break;
+          }
+      }
+      else boardstr += " ";
+      boardstr += "|";
+    }
+    boardstr += "\n";
+  }
+  return boardstr;
+}
+
+void print_board(board *game_board)
+{
+  std::cout << get_board_string(game_board);
+}
+
+bool is_board_consistent(board *game_board)
+{
+  for(uint8_t i = 0; i < 8; i++)
+  {
+    for(uint8_t j = 0; j < 8; j++)
+    {
+      if(game_board->fields[i][j] == nullptr) continue;
+      if(game_board->fields[i][j]->x_pos != i || game_board->fields[i][j]->y_pos != j || game_board->fields[i][j]->alive == false)
+      {
+        std::cout << int(i) << " " << int(j) << std::endl;
+        std::cout << game_board->fields[i][j]->alive << std::endl;
+        return false;
+
+      }
+    }
+  }
+  return true;
 }

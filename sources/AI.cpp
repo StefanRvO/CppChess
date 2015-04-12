@@ -237,7 +237,6 @@ int32_t AI::issolated_pawns(player *player1, board * the_board)
         {
           if(the_board->fields[player1->pieces[i].x_pos + 1][j] != nullptr &&
             the_board->fields[player1->pieces[i].x_pos + 1][j]->type == pawn &&
-            the_board->fields[player1->pieces[i].x_pos + 1][j]->alive == true &&
             the_board->fields[player1->pieces[i].x_pos + 1][j]->colour == player1->colour)
           {
             issolated = false;
@@ -251,7 +250,6 @@ int32_t AI::issolated_pawns(player *player1, board * the_board)
         {
           if(the_board->fields[player1->pieces[i].x_pos - 1][j] != nullptr &&
             the_board->fields[player1->pieces[i].x_pos - 1][j]->type == pawn &&
-            the_board->fields[player1->pieces[i].x_pos - 1][j]->alive == true &&
             the_board->fields[player1->pieces[i].x_pos - 1][j]->colour == player1->colour)
           {
             issolated = false;
