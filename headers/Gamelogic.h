@@ -21,3 +21,4 @@ void unmake_move(piece *moving_piece, board *game_board, move the_move);
 void print_board(board *game_board);
 std::string get_board_string(board *game_board);
 bool is_board_consistent(board *game_board);
+void print_move(move the_move);

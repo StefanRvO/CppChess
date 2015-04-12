@@ -1045,3 +1045,17 @@ bool is_board_consistent(board *game_board)
   }
   return true;
 }
+void print_move(move the_move)
+{
+  uint8_t move_end_x = (the_move & X_END_MASK) >> X_END_OFF;
+  uint8_t move_end_y  = (the_move & Y_END_MASK) >> Y_END_OFF;
+  uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
+  uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
+
+  uint8_t move_type = the_move & MOVE_TYPE_MASK;
+
+  std::cout << "(" << int(move_start_x) << "," << int(move_start_y);
+  std::cout << "->(" << int(move_end_x) << "," << int(move_end_y);
+  std::cout << ")   " << int(move_type) << std::endl;
+
+}

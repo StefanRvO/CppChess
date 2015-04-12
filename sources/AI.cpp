@@ -27,7 +27,7 @@ AI::~AI()
   delete AI_thread;
 }
 
-void AI::get_best_move_piece(uint8_t pieceid, player *player1, player *player2, move *best_move, int32_t *max)
+bool AI::get_best_move_piece(uint8_t pieceid, player *player1, player *player2, move *best_move, int32_t *max)
 {
   player player1_copy    = *player1;
   player player2_copy    = *player2;
@@ -113,6 +113,10 @@ void AI::get_best_move_piece(uint8_t pieceid, player *player1, player *player2, 
       *best_move = the_move;
     }
   }
+  //hack to fix some weird bug
+  if(possible_moves.size() == 1)
+    *best_move = possible_moves[0];
+  return possible_moves.size();
 }
 
 
@@ -126,11 +130,13 @@ move AI::get_best_move()
     {
       move best_piece_move;
       int32_t piece_max;
-      get_best_move_piece(i, this_player, opponent, &best_piece_move, &piece_max);
-      if(piece_max > max)
+      if(get_best_move_piece(i, this_player, opponent, &best_piece_move, &piece_max))
       {
-        max = piece_max;
-        best_move = best_piece_move;
+        if(piece_max > max || best_move == 0xFFFF)
+        {
+          max = piece_max;
+          best_move = best_piece_move;
+        }
       }
     }
   }
@@ -382,6 +388,7 @@ void AI::AI_loop()
   {
     if(game_board->who2move == this_player->colour)
     {
+      std::cout << this_player->colour << std::endl;
       move best_move = get_best_move();
       if(best_move == 0xFFFF) return;
       auto start_x = (best_move & X_START_MASK) >> X_START_OFF;
@@ -389,9 +396,23 @@ void AI::AI_loop()
       piece *moving_piece = game_board->fields[start_x][start_y];
       draw_mtx->lock();
       make_move(moving_piece, game_board, best_move);
+      print_move(best_move);
       draw_mtx->unlock();
       if(this_player->colour == black) game_board->who2move = white;
       else                             game_board->who2move = black;
+      int chess_status = CheckChessMate(opponent, game_board);
+      switch(chess_status)
+      {
+        case IS_CHESSMATE:
+          if(this_player->colour == white)
+            std::cout << "black is checkmate" << std::endl;
+          else
+            std::cout << "white is checkmate" << std::endl;
+          break;
+        case IS_STALEMATE:
+          std::cout << "stalemate" << std::endl;
+          break;
+      }
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
