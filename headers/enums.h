@@ -18,6 +18,6 @@ enum player_colour
 
 enum player_type
 {
-  human,
-  computer
+  human = 0,
+  computer = 1
 };

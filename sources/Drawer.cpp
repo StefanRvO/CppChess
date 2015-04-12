@@ -4,12 +4,13 @@
 #include "../headers/Gamelogic.h"
 #include "../headers/Move.h"
 #include <cstdlib>
-drawer::drawer(player *white_player, player *black_player, board *game_board_)
+#include "../headers/AI.h"
+drawer::drawer(player *white_player, player *black_player, board *game_board_, std::mutex *draw_mtx_)
 :timer(Timer(DRAWFPS))
 {
   player1 = white_player;
   player2 = black_player;
-
+  draw_mtx = draw_mtx_;
   game_board = game_board_;
 
   //Init SDL
@@ -270,14 +271,16 @@ void drawer::loop()
     {
       move selected_move = select_move(white);
       if(selected_move == 0xFFFF) return;
-      piece *moving_piece = game_board->fields[(selected_move & X_START_MASK) >> X_START_OFF ][(selected_move & Y_START_MASK) >> Y_START_OFF];
+      auto start_x = (selected_move & X_START_MASK) >> X_START_OFF;
+      auto start_y = (selected_move & Y_START_MASK) >> Y_START_OFF;
+      piece *moving_piece = game_board->fields[start_x][start_y];
       make_move(moving_piece, game_board, selected_move);
       game_board->who2move = black;
       int chess_status = CheckChessMate(player2, game_board);
       switch(chess_status)
       {
         case IS_CHESSMATE:
-          std::cout << "white is checkmate" << std::endl;
+          std::cout << "black is checkmate" << std::endl;
           break;
         case IS_STALEMATE:
           std::cout << "stalemate" << std::endl;
@@ -288,7 +291,9 @@ void drawer::loop()
     {
       move selected_move = select_move(black);
       if(selected_move == 0xFFFF) return;
-      piece *moving_piece = game_board->fields[(selected_move & X_START_MASK) >> X_START_OFF ][(selected_move & Y_START_MASK) >> Y_START_OFF];
+      auto start_x = (selected_move & X_START_MASK) >> X_START_OFF;
+      auto start_y = (selected_move & Y_START_MASK) >> Y_START_OFF;
+      piece *moving_piece = game_board->fields[start_x][start_y];
       make_move(moving_piece, game_board, selected_move);
       game_board->who2move = white;
       int chess_status = CheckChessMate(player1, game_board);
@@ -322,6 +327,7 @@ void drawer::loop()
 void drawer::draw_pieces()
 {
   //Draw Pieces
+  draw_mtx->lock();
   int w,h;
   SDL_GetWindowSize(window,&w,&h);
   int fontsize = w;
@@ -338,6 +344,7 @@ void drawer::draw_pieces()
       }
     }
   }
+  draw_mtx->unlock();
 }
 void drawer::draw_board()
 {

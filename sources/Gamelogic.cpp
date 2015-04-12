@@ -24,7 +24,7 @@ int CheckChessMate(player *this_player, board *game_board)
 { //returns 0 for no chessmate or stalemate, 1 for chessmate and 2 for stalemate
 
   //check if there are any possible moves
-  for(uint8_t i = 0; i < 15; i++)
+  for(uint8_t i = 0; i <= 15; i++)
   {
     if(this_player->pieces[i].alive)
     {
@@ -923,7 +923,7 @@ void unmake_move(piece *moving_piece, board *game_board, move the_move, piece *s
       moving_piece->move_back_to(move_start_x, move_start_y);
       game_board->fields[move_start_x][move_start_y] = moving_piece;
       game_board->fields[move_end_x][move_end_y] = second_piece;
-      game_board->fields[move_end_x][move_end_y]->alive = false;
+      game_board->fields[move_end_x][move_end_y]->alive = true;
       break;
     case QUEENPROMO_CAP:
     case KNIGHTPROMO_CAP:
@@ -932,7 +932,7 @@ void unmake_move(piece *moving_piece, board *game_board, move the_move, piece *s
       moving_piece->move_back_to(move_start_x, move_start_y);
       game_board->fields[move_start_x][move_start_y] = moving_piece;
       game_board->fields[move_end_x][move_end_y] = second_piece;
-      game_board->fields[move_end_x][move_end_y]->alive = false;
+      game_board->fields[move_end_x][move_end_y]->alive = true;
       moving_piece->change_type(pawn);
       break;
     case QUEEN_SIDE_CASTLE:
