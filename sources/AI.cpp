@@ -27,18 +27,199 @@ AI::~AI()
   delete AI_thread;
 }
 
-move AI::get_best_move()
+void AI::get_best_move_piece(uint8_t pieceid, player *player1, player *player2, move *best_move, int32_t *max)
 {
-  for(uint8_t i = 0; i <= 15; i++)
+  player player1_copy    = *player1;
+  player player2_copy    = *player2;
+  board game_board_copy(player1_copy, player2_copy);
+  game_board_copy.who2move = player1->colour;
+  *max = -99999999;
+  *best_move = 0xFFFF;
+  player *white_player;
+  player *black_player;
+
+  if(player1_copy.colour == white) {white_player = &player1_copy; black_player = &player2_copy;}
+  else                              {black_player = &player1_copy; white_player = &player2_copy;}
+
+  std::vector<move> possible_moves;
+  possible_moves.reserve(100);
+  if(game_board_copy.who2move == white)
+    find_legal_moves(&(white_player->pieces[pieceid]), white_player, &game_board_copy, &possible_moves);
+  else
+    find_legal_moves(&(black_player->pieces[pieceid]), black_player, &game_board_copy, &possible_moves);
+
+  for(auto the_move : possible_moves)
   {
-    std::vector<move> possible_moves;
-    find_legal_moves(&(this_player->pieces[i]), this_player, game_board, &possible_moves);
-    if(possible_moves.size())
+    //perform the move and save some info about it so we can unmake it.
+    uint8_t move_type = the_move & MOVE_TYPE_MASK;
+    uint8_t move_end_x = (the_move & X_END_MASK) >> X_END_OFF;
+    uint8_t move_end_y  = (the_move & Y_END_MASK) >> Y_END_OFF;
+    uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
+    uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
+    piece *targetpiece;
+    piece *moving_piece = game_board_copy.fields[move_start_x][move_start_y];
+
+    switch(move_type)
     {
-      return possible_moves[0];
+      case CAPTURE:
+      case QUEENPROMO_CAP:
+      case KNIGHTPROMO_CAP:
+      case ROOKPROMO_CAP:
+      case BISHOPPROMO_CAP:
+        targetpiece = game_board_copy.fields[move_end_x][move_end_y];
+        break;
+      case QUEEN_SIDE_CASTLE:
+        targetpiece = game_board_copy.fields[ROOK_0][move_end_y];
+        break;
+      case KING_SIDE_CASTLE:
+        targetpiece = game_board_copy.fields[ROOK_1][move_end_y];
+        break;
+    }
+    make_move(moving_piece, &game_board_copy, the_move);
+
+    if(game_board_copy.who2move == black) game_board_copy.who2move = white;
+    else                                   game_board_copy.who2move = black;
+
+    int32_t score = -negamax(white_player, black_player, &game_board_copy, 2);
+
+    //unmake the move
+    switch(move_type)
+    {
+      case QUIET:
+      case DOUBLEPAWN:
+      case QUEENPROMO:
+      case KNIGHTPROMO:
+      case ROOKPROMO:
+      case BISHOPPROMO:
+        unmake_move(moving_piece, &game_board_copy, the_move);
+        break;
+      case CAPTURE:
+      case QUEENPROMO_CAP:
+      case KNIGHTPROMO_CAP:
+      case ROOKPROMO_CAP:
+      case BISHOPPROMO_CAP:
+      case QUEEN_SIDE_CASTLE:
+      case KING_SIDE_CASTLE:
+        unmake_move(moving_piece, &game_board_copy, the_move, targetpiece);
+        break;
+    }
+
+    if(game_board_copy.who2move == black) game_board_copy.who2move = white;
+    else                                  game_board_copy.who2move = black;
+
+    if(score > *max)
+    {
+      *max = score;
+      *best_move = the_move;
     }
   }
-  return 0xFFFF;
+}
+
+
+move AI::get_best_move()
+{
+  move best_move = 0xFFFF;
+  int32_t max = -99999999;
+  for(uint8_t i = 0; i <= 15; i++)
+  {
+    if(this_player->pieces[i].alive)
+    {
+      move best_piece_move;
+      int32_t piece_max;
+      get_best_move_piece(i, this_player, opponent, &best_piece_move, &piece_max);
+      if(piece_max > max)
+      {
+        max = piece_max;
+        best_move = best_piece_move;
+      }
+    }
+  }
+  return best_move;
+}
+
+int32_t AI::negamax(player *white_player, player *black_player, board *the_board, int depth)
+{
+  if(depth == 0) return evaluate(white_player, black_player, the_board);
+  int32_t max = -99999999;
+  std::vector<move> possible_moves;
+  possible_moves.reserve(100);
+  if(the_board->who2move == white)
+  {
+    for(uint8_t i = 0; i < 16; i++)
+    {
+      if(white_player->pieces[i].alive)
+        find_legal_moves(&(white_player->pieces[i]), white_player, the_board, &possible_moves);
+    }
+  }
+  else
+  {
+    for(uint8_t i = 0; i < 16; i++)
+    {
+      if(black_player->pieces[i].alive)
+        find_legal_moves(&(black_player->pieces[i]), black_player, the_board, &possible_moves);
+    }
+  }
+  for(auto the_move : possible_moves)
+  {
+    //perform the move and save some info about it so we can unmake it.
+    uint8_t move_type = the_move & MOVE_TYPE_MASK;
+    uint8_t move_end_x = (the_move & X_END_MASK) >> X_END_OFF;
+    uint8_t move_end_y  = (the_move & Y_END_MASK) >> Y_END_OFF;
+    uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
+    uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
+    piece *targetpiece;
+    piece *moving_piece = the_board->fields[move_start_x][move_start_y];
+
+    switch(move_type)
+    {
+      case CAPTURE:
+      case QUEENPROMO_CAP:
+      case KNIGHTPROMO_CAP:
+      case ROOKPROMO_CAP:
+      case BISHOPPROMO_CAP:
+        targetpiece = the_board->fields[move_end_x][move_end_y];
+        break;
+      case QUEEN_SIDE_CASTLE:
+        targetpiece = the_board->fields[ROOK_0][move_end_y];
+        break;
+      case KING_SIDE_CASTLE:
+        targetpiece = the_board->fields[ROOK_1][move_end_y];
+        break;
+    }
+    make_move(moving_piece, the_board, the_move);
+
+    if(the_board->who2move == black) the_board->who2move = white;
+    else                             the_board->who2move = black;
+
+    int32_t score = -negamax(white_player, black_player, the_board, depth - 1);
+
+    //unmake the move
+    switch(move_type)
+    {
+      case QUIET:
+      case DOUBLEPAWN:
+      case QUEENPROMO:
+      case KNIGHTPROMO:
+      case ROOKPROMO:
+      case BISHOPPROMO:
+        unmake_move(moving_piece, the_board, the_move);
+        break;
+      case CAPTURE:
+      case QUEENPROMO_CAP:
+      case KNIGHTPROMO_CAP:
+      case ROOKPROMO_CAP:
+      case BISHOPPROMO_CAP:
+      case QUEEN_SIDE_CASTLE:
+      case KING_SIDE_CASTLE:
+        unmake_move(moving_piece, the_board, the_move, targetpiece);
+        break;
+    }
+
+    if(the_board->who2move == black) the_board->who2move = white;
+    else                             the_board->who2move = black;
+    if(score > max) max = score;
+  }
+  return max;
 }
 
 
@@ -194,7 +375,7 @@ int32_t AI::evaluate(player *white_player, player *black_player, board *the_boar
 
   score += -5 * pawn_score(white_player, the_board);
   score -= -5 * pawn_score(black_player, the_board);
-  return score;
+  return score * the_board->who2move;
 }
 
 void AI::AI_loop()
@@ -204,6 +385,7 @@ void AI::AI_loop()
     if(game_board->who2move == this_player->colour)
     {
       move best_move = get_best_move();
+      if(best_move == 0xFFFF) return;
       auto start_x = (best_move & X_START_MASK) >> X_START_OFF;
       auto start_y = (best_move & Y_START_MASK) >> Y_START_OFF;
       piece *moving_piece = game_board->fields[start_x][start_y];
