@@ -14,7 +14,6 @@ int main(int argv, char **args)
   for(int i = 1; i < argv; i++)
   {
     std::string arg_str = args[i];
-    std::cout << arg_str << std::endl;
     if      (arg_str == "-semiauto") {black_type = computer; white_type = human; break;}
     else if (arg_str == "-fullauto") {black_type = computer; white_type = computer; break;}
   }

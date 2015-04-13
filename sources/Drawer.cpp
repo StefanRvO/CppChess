@@ -82,6 +82,128 @@ drawer::~drawer()
   SDL_DestroyWindow(window);
   SDL_Quit();
 }
+
+void drawer::draw_game_info()
+{
+  //draws info about the game in the right 20% of the screen.
+  int w, h;
+  SDL_GetWindowSize(window,&w,&h);
+  int w_offset = w * 0.8;
+  int fontsize = h;
+  if( fontsize > w) fontsize = w;
+  fontsize /= 14;
+
+  //Draw whose turn it is.
+  TextDrawer TDrawerTurn("FreeSans.ttf", fontsize);
+  if(game_board->who2move == black)
+    TDrawerTurn.DrawText(renderer, "BLACK", w_offset + w * 0.01, 0, 0, 255, 0, 255);
+  else
+    TDrawerTurn.DrawText(renderer, "WHITE", w_offset + w * 0.01, 0, 0, 255, 0, 255);
+
+  //Draw if there is chessmate, chess or stalemate
+  TextDrawer TDrawerChess("FreeSans.ttf", fontsize/2.5);
+  int chess_status1 = CheckChessMate(player2, game_board);
+  switch(chess_status1)
+  {
+    case IS_CHESSMATE:
+      TDrawerChess.DrawText(renderer, "Black is chessmate!", w_offset + w * 0.01, h * 0.1, 255, 0, 0, 255);
+      break;
+    case IS_STALEMATE:
+      TDrawerChess.DrawText(renderer, "Stalemate!",          w_offset + w * 0.01, h * 0.1, 255, 0, 0, 255);
+      break;
+  }
+  int chess_status2 = CheckChessMate(player1, game_board);
+  switch(chess_status2)
+  {
+    case IS_CHESSMATE:
+        TDrawerChess.DrawText(renderer, "White is chessmate!", w_offset + w * 0.008, h * 0.1, 255, 0, 0, 255);
+      break;
+    case IS_STALEMATE:
+      TDrawerChess.DrawText(renderer, "Stalemate!",          w_offset + w * 0.05, h * 0.1, 255, 0, 0, 255);
+      break;
+  }
+  if(!chess_status1 && !chess_status2)
+  {
+    if(game_board->who2move == white)
+    {
+      if(isChess(player1, game_board))
+      {
+        TDrawerChess.DrawText(renderer, "White is chess!", w_offset + w * 0.03, h * 0.1, 255, 0, 0, 255);
+      }
+    }
+    else
+    {
+      if(isChess(player2, game_board))
+      {
+        TDrawerChess.DrawText(renderer, "Black is chess!", w_offset + w * 0.03, h * 0.1, 255, 0, 0, 255);
+      }
+    }
+
+  }
+
+  //Print the most resent moves
+  TextDrawer TDrawerMoves("FreeSans.ttf", fontsize/2.5);
+
+  //Lock mutex to prevent segfault
+  draw_mtx->lock();
+  TDrawerMoves.DrawText(renderer, "Recent Moves", w_offset + w * 0.03, h * 0.2, 0, 0, 255, 255);
+
+  int i = 1;
+  for(auto it = game_board->moves.rbegin(); it != game_board->moves.rend(); it++)
+  {
+    auto the_move = *it;
+    int move_end_x = (the_move & X_END_MASK) >> X_END_OFF;
+    int move_end_y  = (the_move & Y_END_MASK) >> Y_END_OFF;
+    int move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
+    int move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
+    int move_type = the_move & MOVE_TYPE_MASK;
+    std::string move_string = "(";
+    move_string += std::to_string(move_start_x);
+    move_string += ",";
+    move_string += std::to_string(move_start_y);
+    move_string += ")->(";
+    move_string += std::to_string(move_end_x);
+    move_string += ",";
+    move_string += std::to_string(move_end_y);
+    move_string += ")";
+    if(i % 2)
+      TDrawerMoves.DrawText(renderer, std::string(std::to_string(i) + ": ").c_str(), w_offset + w * 0.03, h * 0.2 + 0.05 * h * i, 70, 70, 125, 255);
+    else
+      TDrawerMoves.DrawText(renderer, std::string(std::to_string(i) + ": ").c_str(), w_offset + w * 0.03, h * 0.2 + 0.05 * h * i, 125, 70, 70, 255);
+
+    switch(move_type)
+    {
+    case QUIET: case DOUBLEPAWN:
+      TDrawerMoves.DrawText(renderer, move_string.c_str(), w_offset + w * 0.055, h * 0.2 + 0.05 * h * i, 0, 255, 0, 255);
+      break;
+    case CAPTURE:
+      TDrawerMoves.DrawText(renderer, move_string.c_str(), w_offset + w * 0.055, h * 0.2 + 0.05 * h * i, 255, 0, 0, 255);
+      break;
+    case QUEENPROMO_CAP:
+    case KNIGHTPROMO_CAP:
+    case ROOKPROMO_CAP:
+    case BISHOPPROMO_CAP:
+      TDrawerMoves.DrawText(renderer, move_string.c_str(), w_offset + w * 0.055, h * 0.2 + 0.05 * h * i, 255, 0, 255, 255);
+      break;
+    case QUEENPROMO:
+    case KNIGHTPROMO:
+    case ROOKPROMO:
+    case BISHOPPROMO:
+      TDrawerMoves.DrawText(renderer, move_string.c_str(), w_offset + w * 0.055, h * 0.2 + 0.05 * h * i, 0, 0, 255, 255);
+      break;
+    case QUEEN_SIDE_CASTLE:
+    case KING_SIDE_CASTLE:
+      TDrawerMoves.DrawText(renderer, move_string.c_str(), w_offset + w * 0.055, h * 0.2 + 0.05 * h * i, 125, 125, 125, 255);
+      break;
+    }
+    i++;
+
+
+  }
+
+  draw_mtx->unlock();
+}
+
 move drawer::choose_promotion(move base_move)
 {
   int start_x = (base_move & X_START_MASK) >> X_START_OFF;
@@ -93,7 +215,7 @@ move drawer::choose_promotion(move base_move)
     SDL_Event event; //grab events
     int y, x, w, h;
     SDL_GetWindowSize(window,&w,&h);
-
+    w = w * 0.8;
     while(SDL_PollEvent(&event))
     {
       switch (event.type)
@@ -111,8 +233,8 @@ move drawer::choose_promotion(move base_move)
             x = event.button.x;
 
             //find the pressed field.
-            int field_y = float(y) / w * 8;
-            int field_x = float(x) / h * 8;
+            int field_y = float(y) / h * 8;
+            int field_x = float(x) / w * 8;
             auto move_type = base_move & MOVE_TYPE_MASK;
             if(move_type == QUEENPROMO || move_type == KNIGHTPROMO ||
                 move_type == ROOKPROMO || move_type == BISHOPPROMO)
@@ -191,7 +313,7 @@ move drawer::select_move(player_colour player_to_select)
     SDL_Event event; //grab events
     int y, x, w, h;
     SDL_GetWindowSize(window,&w,&h);
-
+    w = w * 0.8;
     while(SDL_PollEvent(&event))
     {
       switch (event.type)
@@ -209,8 +331,8 @@ move drawer::select_move(player_colour player_to_select)
             x = event.button.x;
 
             //find the pressed field.
-            int field_y = (7 - int(float(y) / w * 8));
-            int field_x = float(x) / h * 8;
+            int field_y = (7 - int(float(y) / h * 8));
+            int field_x = float(x) / w * 8;
 
             //check if pressed field is in possible moves.
             for(auto this_move : possible_moves)
@@ -264,6 +386,7 @@ void drawer::draw_possible_moves_board(std::vector<move> *possible_moves)
   int w,h;
   SDL_GetWindowSize(window,&w,&h);
   //Draw the selected piece a colour
+  w = w * 0.8;
   if(possible_moves->size())
   {
     int x_pos = ((*possible_moves)[0] & X_START_MASK) >> X_START_OFF;
@@ -305,44 +428,6 @@ void drawer::loop()
 {
   while(!stop)
   {
-    if(game_board-> who2move == white && player1->type == human)
-    {
-      move selected_move = select_move(white);
-      if(selected_move == 0xFFFF) return;
-      auto start_x = (selected_move & X_START_MASK) >> X_START_OFF;
-      auto start_y = (selected_move & Y_START_MASK) >> Y_START_OFF;
-      piece *moving_piece = game_board->fields[start_x][start_y];
-      game_board->make_move(moving_piece, selected_move);
-      int chess_status = CheckChessMate(player2, game_board);
-      switch(chess_status)
-      {
-        case IS_CHESSMATE:
-          std::cout << "black is checkmate" << std::endl;
-          break;
-        case IS_STALEMATE:
-          std::cout << "stalemate" << std::endl;
-          break;
-      }
-    }
-    if(game_board-> who2move == black && player2->type == human)
-    {
-      move selected_move = select_move(black);
-      if(selected_move == 0xFFFF) return;
-      auto start_x = (selected_move & X_START_MASK) >> X_START_OFF;
-      auto start_y = (selected_move & Y_START_MASK) >> Y_START_OFF;
-      piece *moving_piece = game_board->fields[start_x][start_y];
-      game_board->make_move(moving_piece, selected_move);
-      int chess_status = CheckChessMate(player1, game_board);
-      switch(chess_status)
-      {
-        case IS_CHESSMATE:
-          std::cout << "white is checkmate" << std::endl;
-          break;
-        case IS_STALEMATE:
-          std::cout << "stalemate" << std::endl;
-          break;
-      }
-    }
     SDL_Event event; //grab events
     while(SDL_PollEvent(&event))
     {
@@ -353,10 +438,48 @@ void drawer::loop()
           break;
       }
     }
+    SDL_SetRenderDrawColor(renderer,0,0,0,255);
+    SDL_RenderClear(renderer);
     draw_board();
     draw_pieces();
+    draw_game_info();
     SDL_RenderPresent(renderer);
     timer.tick();
+    if( (game_board-> who2move == white && player1->type == human) || (game_board-> who2move == black && player2->type == human))
+    {
+      move selected_move = select_move(game_board-> who2move);
+      if(selected_move == 0xFFFF) return;
+      auto start_x = (selected_move & X_START_MASK) >> X_START_OFF;
+      auto start_y = (selected_move & Y_START_MASK) >> Y_START_OFF;
+      piece *moving_piece = game_board->fields[start_x][start_y];
+      game_board->make_move(moving_piece, selected_move);
+      if(game_board-> who2move == white)
+      {
+        int chess_status = CheckChessMate(player2, game_board);
+        switch(chess_status)
+        {
+          case IS_CHESSMATE:
+            std::cout << "black is checkmate" << std::endl;
+            break;
+          case IS_STALEMATE:
+            std::cout << "stalemate" << std::endl;
+            break;
+        }
+      }
+      else
+      {
+        int chess_status = CheckChessMate(player1, game_board);
+        switch(chess_status)
+        {
+          case IS_CHESSMATE:
+            std::cout << "white is checkmate" << std::endl;
+            break;
+          case IS_STALEMATE:
+            std::cout << "stalemate" << std::endl;
+            break;
+        }
+      }
+    }
   }
 }
 
@@ -366,6 +489,7 @@ void drawer::draw_pieces()
   draw_mtx->lock();
   int w,h;
   SDL_GetWindowSize(window,&w,&h);
+  w = w * 0.8;
   for(int i = 0; i < 8; i++)
   {
     for(int j = 0; j < 8; j++)
@@ -382,7 +506,7 @@ void drawer::draw_board()
 {
   int w,h;
   SDL_GetWindowSize(window,&w,&h);
-
+  w = w * 0.8;
   //Draw Fields
   for(int i = 0; i < 8; i++)
   {

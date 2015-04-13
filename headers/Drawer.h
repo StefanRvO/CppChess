@@ -11,7 +11,7 @@
 #include <SDL2/SDL2_gfxPrimitives.h>
 #include <SDL2/SDL_image.h>
 #include <mutex>
-#define WINDOWSIZE_X 600
+#define WINDOWSIZE_X 750
 #define WINDOWSIZE_Y 600
 #define BLACK_FIELD_COLOUR      125,125,125,255
 #define WHITE_FIELD_COLOUR      66 ,66 ,66 ,255
@@ -41,6 +41,7 @@ class drawer
     move select_move(player_colour player_to_select);
     void draw_pieces();
     void draw_possible_moves_board(std::vector<move> *possible_moves);
+    void draw_game_info();
     move choose_promotion(move base_move);
     std::mutex *draw_mtx;
     SDL_Texture *piece_textures[2][6];

@@ -27,11 +27,11 @@ AI::~AI()
   delete AI_thread;
 }
 
-bool AI::get_best_move_piece(uint8_t pieceid, player *player1, player *player2, move *best_move, int32_t *max)
+void AI::get_best_move_piece(uint8_t pieceid, player *player1, player *player2, board *the_board, move *best_move, int32_t *max, bool *success)
 {
   player player1_copy    = *player1;
   player player2_copy    = *player2;
-  board game_board_copy(player1_copy, player2_copy);
+  board game_board_copy(player1_copy, player2_copy, *the_board);
   game_board_copy.who2move = player1->colour;
   *max = -99999999;
   *best_move = 0xFFFF;
@@ -70,14 +70,14 @@ bool AI::get_best_move_piece(uint8_t pieceid, player *player1, player *player2, 
   //hack to fix some weird bug
   if(possible_moves.size() == 1)
     *best_move = possible_moves[0];
-  return possible_moves.size();
+  *success = possible_moves.size();
 }
 
-bool AI::get_best_move_piece_alpha_beta(uint8_t pieceid, player *player1, player *player2, move *best_move, int32_t *max)
+void AI::get_best_move_piece_alpha_beta(uint8_t pieceid, player *player1, player *player2, board *the_board, move *best_move, int32_t *max, bool *success)
 {
   player player1_copy    = *player1;
   player player2_copy    = *player2;
-  board game_board_copy(player1_copy, player2_copy);
+  board game_board_copy(player1_copy, player2_copy, *the_board);
   game_board_copy.who2move = player1->colour;
   *max = -99999999;
 
@@ -104,7 +104,7 @@ bool AI::get_best_move_piece_alpha_beta(uint8_t pieceid, player *player1, player
     piece *targetpiece = game_board_copy.make_move(moving_piece, the_move);
 
 
-    auto score = - alpha_beta(-99999999, 99999999, white_player, black_player, &game_board_copy, 2);
+    auto score = - alpha_beta(-99999999, 99999999, white_player, black_player, &game_board_copy, SEARCHDEPTH);
 
     game_board_copy.unmake_move(moving_piece, the_move, targetpiece);
 
@@ -117,28 +117,38 @@ bool AI::get_best_move_piece_alpha_beta(uint8_t pieceid, player *player1, player
   //hack to fix some weird bug
   if(possible_moves.size() == 1)
     *best_move = possible_moves[0];
-  return possible_moves.size();
+  *success = possible_moves.size();
 }
-
 
 
 move AI::get_best_move()
 {
   move best_move = 0xFFFF;
   int32_t max = -99999999;
+  move best_piece_moves[16];
+  int32_t piece_maxs[16];
+  bool success[16] = {false};
+  std::vector<std::thread *> threads;
+
   for(uint8_t i = 0; i <= 15; i++)
   {
     if(this_player->pieces[i].alive)
     {
-      move best_piece_move;
-      int32_t piece_max;
-      if(get_best_move_piece_alpha_beta(i, this_player, opponent, &best_piece_move, &piece_max))
+      auto number = threads.size();
+      std::thread *piece_thread = new std::thread(AI::get_best_move_piece_alpha_beta, i, this_player, opponent, game_board, best_piece_moves + number, piece_maxs + number, success + number);
+      threads.push_back(piece_thread);
+    }
+  }
+  for(uint32_t i = 0; i < threads.size(); i++)
+  {
+    threads[i]->join();
+    delete threads[i];
+    if(success[i])
+    {
+      if(piece_maxs[i] > max || best_move == 0xFFFF)
       {
-        if(piece_max > max || best_move == 0xFFFF)
-        {
-          max = piece_max;
-          best_move = best_piece_move;
-        }
+        max = piece_maxs[i];
+        best_move = best_piece_moves[i];
       }
     }
   }

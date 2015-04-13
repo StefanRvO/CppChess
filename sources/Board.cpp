@@ -18,6 +18,27 @@ board::board(player &white_p, player &black_p)
   }
 }
 
+board::board(player &white_p, player &black_p, board &old_board)
+{
+  for(uint8_t i = 0; i < 8; i++)
+  {
+    for(uint8_t j = 0; j < 8; j++)
+    {
+      this->fields[i][j] = nullptr;
+    }
+  }
+  for(uint8_t i = 0; i < 16; i++)
+  {
+    if(white_p.pieces[i].alive)
+      this->fields[white_p.pieces[i].x_pos][white_p.pieces[i].y_pos] = &(white_p.pieces[i]);
+    if(black_p.pieces[i].alive)
+      this->fields[black_p.pieces[i].x_pos][black_p.pieces[i].y_pos] = &(black_p.pieces[i]);
+  }
+  this->moves = old_board.moves;
+  this->who2move = old_board.who2move;
+}
+
+
 board::~board()
 {
 
@@ -145,6 +166,7 @@ void board::unmake_move(piece *moving_piece, move the_move, piece *second_piece)
   }
   if(who2move == black) who2move = white;
   else                  who2move = black;
+  this->moves.pop_back();
 }
 
 piece *board::make_move(piece *moving_piece, move the_move)
@@ -249,6 +271,6 @@ piece *board::make_move(piece *moving_piece, move the_move)
 
   if(who2move == black) who2move = white;
   else                  who2move = black;
-
+  this->moves.push_back(the_move);
   return second_piece;
 }
