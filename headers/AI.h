@@ -17,6 +17,10 @@ class AI
     std::thread *AI_thread;
     std::mutex *draw_mtx;
     bool stop;
+    int32_t alpha_beta(int32_t alpha, int32_t beta, player *white_player, player *black_player, board *the_board, int depth);
+    int32_t quiescence(int32_t alpha, int32_t beta, player *white_player, player *black_player, board *the_board);
+    bool get_best_move_piece_alpha_beta(uint8_t pieceid, player *player1, player *player2, move *best_move, int32_t *max);
+
 
   public:
     static int32_t issolated_pawns(player *player1, board * the_board);
