@@ -447,6 +447,12 @@ void drawer::loop()
     SDL_RenderPresent(renderer);
     if( (game_board-> who2move == white && player1->type == human) || (game_board-> who2move == black && player2->type == human))
     {
+      SDL_SetRenderDrawColor(renderer,0,0,0,255);
+      SDL_RenderClear(renderer);
+      draw_board();
+      draw_pieces();
+      draw_game_info();
+      SDL_RenderPresent(renderer);
       move selected_move = select_move(game_board-> who2move);
       if(selected_move == 0xFFFF) return;
       auto start_x = (selected_move & X_START_MASK) >> X_START_OFF;
