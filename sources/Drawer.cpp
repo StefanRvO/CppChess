@@ -48,6 +48,31 @@ drawer::drawer(player *white_player, player *black_player, board *game_board_, s
     SDL_Quit();
     TTF_Quit();
   }
+  //Initialize PNG loading
+  int imgFlags = IMG_INIT_PNG;
+  if( !( IMG_Init( imgFlags ) & imgFlags ) )
+  {
+    TTF_Quit();
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+    std::cout << "SDL error in PNG module!" << std::endl;
+  }
+
+  //load textures for the pieces
+  	piece_textures[0][0] = IMG_LoadTexture(renderer, "images/king_black.png");
+  	piece_textures[0][1] = IMG_LoadTexture(renderer, "images/knight_black.png");
+  	piece_textures[0][2] = IMG_LoadTexture(renderer, "images/pawn_black.png");
+  	piece_textures[0][3] = IMG_LoadTexture(renderer, "images/queen_black.png");
+  	piece_textures[0][4] = IMG_LoadTexture(renderer, "images/rook_black.png");
+    piece_textures[0][5] = IMG_LoadTexture(renderer, "images/bishop_black.png");
+  	piece_textures[1][0] = IMG_LoadTexture(renderer, "images/king_white.png");
+  	piece_textures[1][1] = IMG_LoadTexture(renderer, "images/knight_white.png");
+  	piece_textures[1][2] = IMG_LoadTexture(renderer, "images/pawn_white.png");
+  	piece_textures[1][3] = IMG_LoadTexture(renderer, "images/queen_white.png");
+  	piece_textures[1][4] = IMG_LoadTexture(renderer, "images/rook_white.png");
+    piece_textures[1][5] = IMG_LoadTexture(renderer, "images/bishop_white.png");
+
 }
 
 drawer::~drawer()
@@ -115,10 +140,7 @@ move drawer::choose_promotion(move base_move)
     std::string piece_string;
     for(int i = 2; i <= 5; i++)
     {
-      if(i == 2)      SDL_SetRenderDrawColor(renderer, rand()%256, rand()%256, rand()%256, 255 );
-      else if(i == 3) SDL_SetRenderDrawColor(renderer, rand()%256, rand()%256, rand()%256, 255);
-      else if(i == 4) SDL_SetRenderDrawColor(renderer, rand()%256, rand()%256, rand()%256, 255);
-      else if(i == 5) SDL_SetRenderDrawColor(renderer, rand()%256, rand()%256, rand()%256, 255);
+      SDL_SetRenderDrawColor(renderer, rand()%256, rand()%256, rand()%256, 255 );
 
       SDL_Rect r;
       r.x = w / 8 * i;
@@ -127,17 +149,33 @@ move drawer::choose_promotion(move base_move)
       r.h = h / 8;
       SDL_RenderFillRect( renderer, &r );
 
+      SDL_Rect piece_rect;
+      SDL_Texture *piece_texture_ptr = NULL;
       switch(i)
       {
-        case 2: piece_string = "Q"; break;
-        case 3: piece_string = "H"; break;
-        case 4: piece_string = "T"; break;
-        case 5: piece_string = "R"; break;
+        case 2:
+          if(colour == black) piece_texture_ptr = piece_textures[0][3];
+          else                            piece_texture_ptr = piece_textures[1][3];
+          break;
+        case 3:
+          if(colour == black) piece_texture_ptr = piece_textures[0][1];
+          else                            piece_texture_ptr = piece_textures[1][1];
+          break;
+        case 4:
+          if(colour == black) piece_texture_ptr = piece_textures[0][4];
+          else                            piece_texture_ptr = piece_textures[1][4];
+          break;
+        case 5:
+          if(colour == black) piece_texture_ptr = piece_textures[0][5];
+          else                            piece_texture_ptr = piece_textures[1][5];
+          break;
       }
-      if(colour == white)
-        TDrawer.DrawText(renderer, piece_string.c_str(), w / 8 * i + w / 35, h / 8 * 3, WHITE_PIECE);
-      else
-        TDrawer.DrawText(renderer, piece_string.c_str(), w / 8 * i + w / 35, h / 8 * 3, BLACK_PIECE);
+      piece_rect.w = w / 8 * 0.8;
+      piece_rect.h = h / 8 * 0.8;
+      piece_rect.x = w / 8 * i + w / 8 * 0.1;
+      piece_rect.y = h / 8 * 3 + h / 8 * 0.1;
+
+    	SDL_RenderCopy(renderer, piece_texture_ptr, NULL, &piece_rect);
     }
     SDL_RenderPresent(renderer);
     timer.tick();
@@ -330,17 +368,13 @@ void drawer::draw_pieces()
   draw_mtx->lock();
   int w,h;
   SDL_GetWindowSize(window,&w,&h);
-  int fontsize = w;
-  if (h > w) fontsize = h;
-  fontsize /= 10;
-  TextDrawer TDrawer("FreeSans.ttf", fontsize);
   for(int i = 0; i < 8; i++)
   {
     for(int j = 0; j < 8; j++)
     {
       if(game_board->fields[i][j] != nullptr)
       {
-        draw_piece(game_board->fields[i][j], &TDrawer, w, h);
+        draw_piece(game_board->fields[i][j], w, h);
       }
     }
   }
@@ -371,34 +405,42 @@ void drawer::draw_board()
   }
 }
 
-void drawer::draw_piece(piece *this_piece, TextDrawer *TDrawer, int w, int h)
+void drawer::draw_piece(piece *this_piece, int w, int h)
 { //This function uses the tenary operator. This operator may be unknown for some
   //The form is: (condition) ? (if_true) : (if_false)
-  std::string piece_string = "";
+  SDL_Rect piece_rect;
+  SDL_Texture *piece_texture_ptr = NULL;
   switch(this_piece->type)
   {
     case pawn:
-      piece_string = "P";
+      if(this_piece->colour == black) piece_texture_ptr = piece_textures[0][2];
+      else                            piece_texture_ptr = piece_textures[1][2];
       break;
     case knight:
-      piece_string = "H";
+      if(this_piece->colour == black) piece_texture_ptr = piece_textures[0][1];
+      else                            piece_texture_ptr = piece_textures[1][1];
       break;
     case queen:
-      piece_string = "Q";
+      if(this_piece->colour == black) piece_texture_ptr = piece_textures[0][3];
+      else                            piece_texture_ptr = piece_textures[1][3];
       break;
     case bishop:
-      piece_string = "R";
+      if(this_piece->colour == black) piece_texture_ptr = piece_textures[0][5];
+      else                            piece_texture_ptr = piece_textures[1][5];
       break;
     case rook:
-      piece_string = "T";
+      if(this_piece->colour == black) piece_texture_ptr = piece_textures[0][4];
+      else                            piece_texture_ptr = piece_textures[1][4];
       break;
     case king:
-      piece_string = "K";
+      if(this_piece->colour == black) piece_texture_ptr = piece_textures[0][0];
+      else                            piece_texture_ptr = piece_textures[1][0];
       break;
   }
-  //std::cout << (int)this_piece->x_pos << " " << (int)this_piece->y_pos << std::endl;
-  if(this_piece->colour == white)
-    TDrawer->DrawText(renderer, piece_string.c_str(), w / 8 * this_piece->x_pos + w / 35, h / 8 * (7 - this_piece->y_pos), WHITE_PIECE);
-  else
-    TDrawer->DrawText(renderer, piece_string.c_str(), w / 8 * this_piece->x_pos + w / 35, h / 8 * (7 - this_piece->y_pos), BLACK_PIECE);
+  piece_rect.w = w / 8 * 0.8;
+  piece_rect.h = h / 8 * 0.8;
+  piece_rect.x = w / 8 * this_piece->x_pos + w / 8 * 0.1;
+  piece_rect.y = h / 8 * (7- this_piece->y_pos) + h / 8 * 0.1;
+
+	SDL_RenderCopy(renderer, piece_texture_ptr, NULL, &piece_rect);
 }

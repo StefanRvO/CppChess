@@ -9,6 +9,7 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL2_gfxPrimitives.h>
+#include <SDL2/SDL_image.h>
 #include <mutex>
 #define WINDOWSIZE_X 600
 #define WINDOWSIZE_Y 600
@@ -36,12 +37,13 @@ class drawer
     Timer timer;
     board  *game_board;
     bool stop = false;
-    void draw_piece(piece *this_piece, TextDrawer *TDrawer, int w, int h);
+    void draw_piece(piece *this_piece, int w, int h);
     move select_move(player_colour player_to_select);
     void draw_pieces();
     void draw_possible_moves_board(std::vector<move> *possible_moves);
     move choose_promotion(move base_move);
     std::mutex *draw_mtx;
+    SDL_Texture *piece_textures[2][6];
   public:
     drawer(player *white_player, player *black_player, board *game_board_, std::mutex *draw_mtx_);
     ~drawer();
