@@ -428,6 +428,7 @@ void drawer::loop()
 {
   while(!stop)
   {
+    timer.tick();
     SDL_Event event; //grab events
     while(SDL_PollEvent(&event))
     {
@@ -444,7 +445,6 @@ void drawer::loop()
     draw_pieces();
     draw_game_info();
     SDL_RenderPresent(renderer);
-    timer.tick();
     if( (game_board-> who2move == white && player1->type == human) || (game_board-> who2move == black && player2->type == human))
     {
       move selected_move = select_move(game_board-> who2move);

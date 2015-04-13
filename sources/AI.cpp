@@ -436,7 +436,6 @@ void AI::AI_loop()
   {
     if(game_board->who2move == this_player->colour)
     {
-      std::cout << this_player->colour << std::endl;
       move best_move = get_best_move();
       if(best_move == 0xFFFF) return;
       auto start_x = (best_move & X_START_MASK) >> X_START_OFF;
@@ -444,7 +443,6 @@ void AI::AI_loop()
       piece *moving_piece = game_board->fields[start_x][start_y];
       draw_mtx->lock();
       game_board->make_move(moving_piece, best_move);
-      print_move(best_move);
       draw_mtx->unlock();
       int chess_status = CheckChessMate(opponent, game_board);
       switch(chess_status)
