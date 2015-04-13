@@ -348,6 +348,7 @@ int32_t AI::evaluate(player *white_player, player *black_player, board *the_boar
 
 int32_t AI::alpha_beta(int32_t alpha, int32_t beta, player *white_player, player *black_player, board *the_board, int depth)
 {
+  int32_t best_score = -99999999;
   if(depth == 0) return quiescence(alpha, beta, white_player, black_player, the_board);
 
   std::vector<move> possible_moves;
@@ -380,8 +381,15 @@ int32_t AI::alpha_beta(int32_t alpha, int32_t beta, player *white_player, player
 
     the_board->unmake_move(moving_piece, the_move, targetpiece);
 
-    if(score >= beta) return beta;
-    if(score > alpha) alpha = score;
+    if(score >= beta) return score;
+    if(score > best_score)
+    {
+      best_score = score;
+      if(score > alpha)
+      {
+        alpha = score;
+      }
+    }
   }
   return alpha;
 }
