@@ -51,61 +51,15 @@ bool AI::get_best_move_piece(uint8_t pieceid, player *player1, player *player2, 
   for(auto the_move : possible_moves)
   {
     //perform the move and save some info about it so we can unmake it.
-    uint8_t move_type = the_move & MOVE_TYPE_MASK;
-    uint8_t move_end_x = (the_move & X_END_MASK) >> X_END_OFF;
-    uint8_t move_end_y  = (the_move & Y_END_MASK) >> Y_END_OFF;
     uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
     uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
-    piece *targetpiece = game_board_copy.fields[move_end_x][move_end_y];
     piece *moving_piece = game_board_copy.fields[move_start_x][move_start_y];
+    piece *targetpiece = game_board_copy.make_move(moving_piece, the_move);
 
-    switch(move_type)
-    {
-      case CAPTURE:
-      case QUEENPROMO_CAP:
-      case KNIGHTPROMO_CAP:
-      case ROOKPROMO_CAP:
-      case BISHOPPROMO_CAP:
-        targetpiece = game_board_copy.fields[move_end_x][move_end_y];
-        break;
-      case QUEEN_SIDE_CASTLE:
-        targetpiece = game_board_copy.fields[ROOK_0][move_end_y];
-        break;
-      case KING_SIDE_CASTLE:
-        targetpiece = game_board_copy.fields[ROOK_1][move_end_y];
-        break;
-    }
-    make_move(moving_piece, &game_board_copy, the_move);
 
-    if(game_board_copy.who2move == black) game_board_copy.who2move = white;
-    else                                   game_board_copy.who2move = black;
+    int32_t score = -negamax(white_player, black_player, &game_board_copy, SEARCHDEPTH);
 
-    int32_t score = -negamax(white_player, black_player, &game_board_copy, 2);
-
-    //unmake the move
-    switch(move_type)
-    {
-      case QUIET:
-      case DOUBLEPAWN:
-      case QUEENPROMO:
-      case KNIGHTPROMO:
-      case ROOKPROMO:
-      case BISHOPPROMO:
-        unmake_move(moving_piece, &game_board_copy, the_move);
-        break;
-      case CAPTURE:
-      case QUEENPROMO_CAP:
-      case KNIGHTPROMO_CAP:
-      case ROOKPROMO_CAP:
-      case BISHOPPROMO_CAP:
-      case QUEEN_SIDE_CASTLE:
-      case KING_SIDE_CASTLE:
-        unmake_move(moving_piece, &game_board_copy, the_move, targetpiece);
-        break;
-    }
-
-    if(game_board_copy.who2move == black) game_board_copy.who2move = white;
-    else                                  game_board_copy.who2move = black;
+    game_board_copy.unmake_move(moving_piece, the_move, targetpiece);
 
     if(score > *max)
     {
@@ -148,7 +102,6 @@ int32_t AI::negamax(player *white_player, player *black_player, board *the_board
   if(depth == 0) return evaluate(white_player, black_player, the_board);
   int32_t max = -99999999;
   std::vector<move> possible_moves;
-  possible_moves.reserve(100);
   if(the_board->who2move == white)
   {
     for(uint8_t i = 0; i < 16; i++)
@@ -168,61 +121,14 @@ int32_t AI::negamax(player *white_player, player *black_player, board *the_board
   for(auto the_move : possible_moves)
   {
     //perform the move and save some info about it so we can unmake it.
-    uint8_t move_type = the_move & MOVE_TYPE_MASK;
-    uint8_t move_end_x = (the_move & X_END_MASK) >> X_END_OFF;
-    uint8_t move_end_y  = (the_move & Y_END_MASK) >> Y_END_OFF;
     uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
     uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
-    piece *targetpiece = the_board->fields[move_end_x][move_end_y];
     piece *moving_piece = the_board->fields[move_start_x][move_start_y];
-
-    switch(move_type)
-    {
-      case CAPTURE:
-      case QUEENPROMO_CAP:
-      case KNIGHTPROMO_CAP:
-      case ROOKPROMO_CAP:
-      case BISHOPPROMO_CAP:
-        targetpiece = the_board->fields[move_end_x][move_end_y];
-        break;
-      case QUEEN_SIDE_CASTLE:
-        targetpiece = the_board->fields[ROOK_0][move_end_y];
-        break;
-      case KING_SIDE_CASTLE:
-        targetpiece = the_board->fields[ROOK_1][move_end_y];
-        break;
-    }
-    make_move(moving_piece, the_board, the_move);
-
-    if(the_board->who2move == black) the_board->who2move = white;
-    else                             the_board->who2move = black;
+    piece *targetpiece = the_board->make_move(moving_piece, the_move);
 
     int32_t score = -negamax(white_player, black_player, the_board, depth - 1);
+    the_board->unmake_move(moving_piece, the_move, targetpiece);
 
-    //unmake the move
-    switch(move_type)
-    {
-      case QUIET:
-      case DOUBLEPAWN:
-      case QUEENPROMO:
-      case KNIGHTPROMO:
-      case ROOKPROMO:
-      case BISHOPPROMO:
-        unmake_move(moving_piece, the_board, the_move);
-        break;
-      case CAPTURE:
-      case QUEENPROMO_CAP:
-      case KNIGHTPROMO_CAP:
-      case ROOKPROMO_CAP:
-      case BISHOPPROMO_CAP:
-      case QUEEN_SIDE_CASTLE:
-      case KING_SIDE_CASTLE:
-        unmake_move(moving_piece, the_board, the_move, targetpiece);
-        break;
-    }
-
-    if(the_board->who2move == black) the_board->who2move = white;
-    else                             the_board->who2move = black;
     if(score > max) max = score;
   }
   return max;
@@ -359,8 +265,8 @@ int32_t AI::evaluate(player *white_player, player *black_player, board *the_boar
   std::vector<move> possible_moves_black;
   std::vector<move> possible_moves_white;
 
-  possible_moves_black.reserve(100);
-  possible_moves_white.reserve(100);
+  possible_moves_black.reserve(30);
+  possible_moves_white.reserve(30);
   for(uint8_t i = 0; i <= 15; i++)
   {
     if(white_player->pieces[i].alive)
@@ -395,11 +301,9 @@ void AI::AI_loop()
       auto start_y = (best_move & Y_START_MASK) >> Y_START_OFF;
       piece *moving_piece = game_board->fields[start_x][start_y];
       draw_mtx->lock();
-      make_move(moving_piece, game_board, best_move);
+      game_board->make_move(moving_piece, best_move);
       print_move(best_move);
       draw_mtx->unlock();
-      if(this_player->colour == black) game_board->who2move = white;
-      else                             game_board->who2move = black;
       int chess_status = CheckChessMate(opponent, game_board);
       switch(chess_status)
       {

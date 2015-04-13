@@ -312,8 +312,7 @@ void drawer::loop()
       auto start_x = (selected_move & X_START_MASK) >> X_START_OFF;
       auto start_y = (selected_move & Y_START_MASK) >> Y_START_OFF;
       piece *moving_piece = game_board->fields[start_x][start_y];
-      make_move(moving_piece, game_board, selected_move);
-      game_board->who2move = black;
+      game_board->make_move(moving_piece, selected_move);
       int chess_status = CheckChessMate(player2, game_board);
       switch(chess_status)
       {
@@ -332,8 +331,7 @@ void drawer::loop()
       auto start_x = (selected_move & X_START_MASK) >> X_START_OFF;
       auto start_y = (selected_move & Y_START_MASK) >> Y_START_OFF;
       piece *moving_piece = game_board->fields[start_x][start_y];
-      make_move(moving_piece, game_board, selected_move);
-      game_board->who2move = white;
+      game_board->make_move(moving_piece, selected_move);
       int chess_status = CheckChessMate(player1, game_board);
       switch(chess_status)
       {

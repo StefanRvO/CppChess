@@ -3,6 +3,7 @@
 #include <thread>
 #include "Move.h"
 #include <mutex>
+#define SEARCHDEPTH 2
 #pragma once
 
 class AI
