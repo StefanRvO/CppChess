@@ -2,8 +2,9 @@
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
-board::board(player &white_p, player &black_p)
+board::board(player &white_p, player &black_p,Trans_Table *t_table_ )
 {
+  t_table = t_table_;
   for(uint8_t i = 0; i < 8; i++)
   {
     for(uint8_t j = 0; j < 8; j++)
@@ -71,6 +72,7 @@ board::board(player &white_p, player &black_p, board &old_board)
   zob_table_castling[1][1] = old_board.zob_table_castling[1][1];
   zob_move = old_board.zob_move;
   zob_hash = old_board.zob_hash;
+  t_table = old_board.t_table;
 }
 
 
@@ -206,6 +208,12 @@ void board::unmake_move(piece *moving_piece, move the_move, piece *second_piece)
   this->moves.pop_back();
   this->castling_rights_his.pop_back();
   this->castling_rights = castling_rights_his.back();
+}
+void board::make_final_move(piece *moving_piece, move the_move)
+{ //makes the move and clears the t_table. This may need to be changed.
+
+  make_move(moving_piece, the_move);
+  t_table->clear();
 }
 
 piece *board::make_move(piece *moving_piece, move the_move)

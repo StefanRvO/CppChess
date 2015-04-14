@@ -458,7 +458,7 @@ void drawer::loop()
       auto start_x = (selected_move & X_START_MASK) >> X_START_OFF;
       auto start_y = (selected_move & Y_START_MASK) >> Y_START_OFF;
       piece *moving_piece = game_board->fields[start_x][start_y];
-      game_board->make_move(moving_piece, selected_move);
+      game_board->make_final_move(moving_piece, selected_move);
       if(game_board-> who2move == white)
       {
         int chess_status = CheckChessMate(player2, game_board);
