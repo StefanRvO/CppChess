@@ -343,7 +343,8 @@ int32_t AI::evaluate(player *white_player, player *black_player, board *the_boar
 
   score += -5 * pawn_score(white_player, the_board);
   score -= -5 * pawn_score(black_player, the_board);
-  return score * the_board->who2move;
+  if(the_board->who2move == black) return -score;
+  else return score;
 }
 
 int32_t AI::alpha_beta(int32_t alpha, int32_t beta, player *white_player, player *black_player, board *the_board, int depth)
