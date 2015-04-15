@@ -5,6 +5,7 @@
 #include "../headers/Move.h"
 #include <cstdlib>
 #include "../headers/AI.h"
+#include "../headers/Primitives.h"
 drawer::drawer(player *white_player, player *black_player, board *game_board_, std::mutex *draw_mtx_)
 :timer(Timer(DRAWFPS))
 {
@@ -373,6 +374,7 @@ move drawer::select_move(player_colour player_to_select)
     }
     draw_possible_moves_board( &possible_moves);
     draw_pieces();
+    draw_last_move();
     SDL_RenderPresent(renderer);
     timer.tick();
 
@@ -444,6 +446,7 @@ void drawer::loop()
     draw_board();
     draw_pieces();
     draw_game_info();
+    draw_last_move();
     SDL_RenderPresent(renderer);
     if( (game_board-> who2move == white && player1->type == human) || (game_board-> who2move == black && player2->type == human))
     {
@@ -452,6 +455,7 @@ void drawer::loop()
       draw_board();
       draw_pieces();
       draw_game_info();
+      draw_last_move();
       SDL_RenderPresent(renderer);
       move selected_move = select_move(game_board-> who2move);
       if(selected_move == 0xFFFF) return;
@@ -571,4 +575,25 @@ void drawer::draw_piece(piece *this_piece, int w, int h)
   piece_rect.y = h / 8 * (7- this_piece->y_pos) + h / 8 * 0.1;
 
 	SDL_RenderCopy(renderer, piece_texture_ptr, NULL, &piece_rect);
+}
+
+void drawer::draw_last_move()
+{
+  int w,h;
+  SDL_GetWindowSize(window,&w,&h);
+  w = w * 0.8;
+  draw_mtx->lock();
+  if(game_board->moves.size())
+  {
+    auto the_move =game_board->moves.back();
+    auto move_end_x = ((the_move & X_END_MASK) >> X_END_OFF) + 0.5;
+    auto move_end_y  = ((the_move & Y_END_MASK) >> Y_END_OFF) - 0.5;
+    auto move_start_x = ((the_move & X_START_MASK) >> X_START_OFF) + 0.5;
+    auto move_start_y  = ((the_move & Y_START_MASK) >> Y_START_OFF) - 0.5;
+    SDL_SetRenderDrawColor(renderer, 180,0,255,0);
+    SDL_Draw_Arrow(renderer, move_start_x * w / 8,
+      (7 - move_start_y) * h / 8, move_end_x * w / 8,
+      (7 - move_end_y) * h / 8, h / 20, w / 20, w / 150);
+  }
+  draw_mtx->unlock();
 }

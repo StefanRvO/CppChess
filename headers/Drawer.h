@@ -23,7 +23,6 @@
 #define KNIGHT_PROMO_SELECT     60  ,60  ,60,255
 #define ROOK_PROMO_SELECT       90  ,90  ,90,255
 #define BISHOP_PROMO_SELECT     120 ,120 ,120,255
-
 #define WHITE_PIECE 255,255,255,255
 #define BLACK_PIECE 0  ,0  ,0  ,255
 #define DRAWFPS 20
@@ -45,6 +44,7 @@ class drawer
     move choose_promotion(move base_move);
     std::mutex *draw_mtx;
     SDL_Texture *piece_textures[2][6];
+    void draw_last_move();
   public:
     drawer(player *white_player, player *black_player, board *game_board_, std::mutex *draw_mtx_);
     ~drawer();

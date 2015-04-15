@@ -1,4 +1,26 @@
 #include "../headers/Primitives.h"
+#include <cmath>
+void SDL_Draw_Arrow(SDL_Renderer* renderer, //crude hack to avoid thickLineRGBA
+                       int           x1,
+                       int           y1,
+                       int           x2,
+                       int           y2,
+                       int           arrowHeight,
+                       int           arrowWidth,
+                       int           width)
+{
+    auto angle = atan2(float((y2-y1)),float(x2-x1));
+    //Draw base line
+    SDL_RenderDrawThickLine(renderer, x1, y1, x2, y2, width);
+
+    //Draw first arrow part
+    SDL_RenderDrawThickLine(renderer, x2,y2,x2-arrowHeight*cos(angle)+arrowWidth*sin(angle),
+      y2-arrowHeight*sin(angle)-arrowWidth*cos(angle), width);
+    //Draw second arrow part
+    SDL_RenderDrawThickLine(renderer, x2,y2,x2-arrowHeight*cos(angle)-arrowWidth*sin(angle),
+      y2-arrowHeight*sin(angle)+arrowWidth*cos(angle), width);
+}
+
 void drawFilledCircle(SDL_Renderer* renderer, int x0, int y0, int radius)
 { //Uses the midpoint circle algorithm to draw a filled circle
   //https://en.wikipedia.org/wiki/Midpoint_circle_algorithm
