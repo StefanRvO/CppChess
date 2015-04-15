@@ -3,8 +3,8 @@
 #include <thread>
 #include "Move.h"
 #include <mutex>
-#define SEARCHDEPTH 3
-#define QUIESCDEPTH 99
+#define SEARCHDEPTH         3
+#define QUIESCDEPTH         20
 #pragma once
 
 class AI

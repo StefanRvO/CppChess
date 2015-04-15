@@ -32,7 +32,7 @@ drawer::drawer(player *white_player, player *black_player, board *game_board_, s
   //Create a window
   window = SDL_CreateWindow("Chess", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
                       WINDOWSIZE_X, WINDOWSIZE_Y,
-                      SDL_WINDOW_SHOWN /*| SDL_WINDOW_RESIZABLE*/);
+                      SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
   if(window == nullptr)
   {
     std::cout << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
@@ -175,26 +175,26 @@ void drawer::draw_game_info()
     switch(move_type)
     {
     case QUIET: case DOUBLEPAWN:
-      TDrawerMoves.DrawText(renderer, move_string.c_str(), w_offset + w * 0.055, h * 0.2 + 0.05 * h * i, 0, 255, 0, 255);
+      TDrawerMoves.DrawText(renderer, move_string.c_str(), w_offset + w * 0.065, h * 0.2 + 0.05 * h * i, 0, 255, 0, 255);
       break;
     case CAPTURE:
-      TDrawerMoves.DrawText(renderer, move_string.c_str(), w_offset + w * 0.055, h * 0.2 + 0.05 * h * i, 255, 0, 0, 255);
+      TDrawerMoves.DrawText(renderer, move_string.c_str(), w_offset + w * 0.065, h * 0.2 + 0.05 * h * i, 255, 0, 0, 255);
       break;
     case QUEENPROMO_CAP:
     case KNIGHTPROMO_CAP:
     case ROOKPROMO_CAP:
     case BISHOPPROMO_CAP:
-      TDrawerMoves.DrawText(renderer, move_string.c_str(), w_offset + w * 0.055, h * 0.2 + 0.05 * h * i, 255, 0, 255, 255);
+      TDrawerMoves.DrawText(renderer, move_string.c_str(), w_offset + w * 0.065, h * 0.2 + 0.05 * h * i, 255, 0, 255, 255);
       break;
     case QUEENPROMO:
     case KNIGHTPROMO:
     case ROOKPROMO:
     case BISHOPPROMO:
-      TDrawerMoves.DrawText(renderer, move_string.c_str(), w_offset + w * 0.055, h * 0.2 + 0.05 * h * i, 0, 0, 255, 255);
+      TDrawerMoves.DrawText(renderer, move_string.c_str(), w_offset + w * 0.065, h * 0.2 + 0.05 * h * i, 0, 0, 255, 255);
       break;
     case QUEEN_SIDE_CASTLE:
     case KING_SIDE_CASTLE:
-      TDrawerMoves.DrawText(renderer, move_string.c_str(), w_offset + w * 0.055, h * 0.2 + 0.05 * h * i, 125, 125, 125, 255);
+      TDrawerMoves.DrawText(renderer, move_string.c_str(), w_offset + w * 0.065, h * 0.2 + 0.05 * h * i, 125, 125, 125, 255);
       break;
     }
     i++;
