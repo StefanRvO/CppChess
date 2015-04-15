@@ -106,7 +106,7 @@ void drawer::draw_game_info()
   switch(chess_status1)
   {
     case IS_CHESSMATE:
-      TDrawerChess.DrawText(renderer, "Black is chessmate!", w_offset + w * 0.01, h * 0.1, 255, 0, 0, 255);
+      TDrawerChess.DrawText(renderer, "Black is checkmate!", w_offset + w * 0.01, h * 0.1, 255, 0, 0, 255);
       break;
     case IS_STALEMATE:
       TDrawerChess.DrawText(renderer, "Stalemate!",          w_offset + w * 0.01, h * 0.1, 255, 0, 0, 255);
@@ -116,7 +116,7 @@ void drawer::draw_game_info()
   switch(chess_status2)
   {
     case IS_CHESSMATE:
-        TDrawerChess.DrawText(renderer, "White is chessmate!", w_offset + w * 0.008, h * 0.1, 255, 0, 0, 255);
+        TDrawerChess.DrawText(renderer, "White is checkmate!", w_offset + w * 0.008, h * 0.1, 255, 0, 0, 255);
       break;
     case IS_STALEMATE:
       TDrawerChess.DrawText(renderer, "Stalemate!",          w_offset + w * 0.05, h * 0.1, 255, 0, 0, 255);
@@ -128,7 +128,7 @@ void drawer::draw_game_info()
     {
       if(isChess(player1, game_board))
       {
-        TDrawerChess.DrawText(renderer, "White is chess!", w_offset + w * 0.03, h * 0.1, 255, 0, 0, 255);
+        TDrawerChess.DrawText(renderer, "White is check!", w_offset + w * 0.03, h * 0.1, 255, 0, 0, 255);
       }
     }
     else

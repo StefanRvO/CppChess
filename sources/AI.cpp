@@ -397,6 +397,29 @@ int32_t AI::evaluate(player *white_player, player *black_player, board *the_boar
   score -= -5 * pawn_score(black_player, the_board);
   if(the_board->who2move == black) score = -score;
   the_board->t_table->save_hash_eval(score, the_board->zob_hash);
+
+
+  //Need to do some stuff to special case chessmate and stalemate
+  int chess_status = CheckChessMate(white_player, the_board);
+  switch(chess_status)
+  {
+    case IS_CHESSMATE:
+      score = -9999999;
+      break;
+    case IS_STALEMATE:
+      score = 0;
+      break;
+  }
+  chess_status = CheckChessMate(black_player, the_board);
+  switch(chess_status)
+  {
+    case IS_CHESSMATE:
+      score = 99999999;
+      break;
+    case IS_STALEMATE:
+      score = 0;
+      break;
+  }
   return score;
 }
 
@@ -411,7 +434,7 @@ int32_t AI::alpha_beta(int32_t alpha, int32_t beta, player *white_player, player
   }
   if(depth == 0)
   {
-    best_score = quiescence(alpha, beta, white_player, black_player, the_board);
+    best_score = quiescence(alpha, beta, white_player, black_player, the_board, QUIESCDEPTH);
     the_board->t_table->save_hash(depth, best_score, EXACT, best_move, the_board->zob_hash);
     return best_score;
   }
@@ -468,11 +491,12 @@ int32_t AI::alpha_beta(int32_t alpha, int32_t beta, player *white_player, player
   return alpha;
 }
 
-int32_t AI::quiescence(int32_t alpha, int32_t beta, player *white_player, player *black_player, board *the_board)
+int32_t AI::quiescence(int32_t alpha, int32_t beta, player *white_player, player *black_player, board *the_board, int depth)
 { //perform a quiescence search
   int32_t stand_pat = evaluate(white_player, black_player, the_board);
   if(stand_pat >= beta) return beta;
   if(alpha < stand_pat) alpha = stand_pat;
+  if(depth == 0) return stand_pat;
 
   //get capture moves
   std::vector<move> possible_moves;
@@ -498,7 +522,7 @@ int32_t AI::quiescence(int32_t alpha, int32_t beta, player *white_player, player
     uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
     piece *moving_piece = the_board->fields[move_start_x][move_start_y];
     piece *targetpiece = the_board->make_move(moving_piece, the_move);
-    auto score = - quiescence(-beta, -alpha, white_player, black_player, the_board);
+    auto score = - quiescence(-beta, -alpha, white_player, black_player, the_board, depth - 1);
     the_board->unmake_move(moving_piece, the_move, targetpiece);
     if(score >= beta) return beta;
     if(score > alpha) alpha = stand_pat;

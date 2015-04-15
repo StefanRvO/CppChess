@@ -2,11 +2,11 @@
 #include <cstdint>
 #include "enums.h"
 
-#define KINGVAL  	20000
+#define KINGVAL  	50000
 #define QUEENVAL 	900
 #define ROOKVAL  	500
 #define BISHOPVAL 300
-#define KNIGHTVAL 300
+#define KNIGHTVAL 275
 #define PAWNVAL   100
 
 class piece
