@@ -6,6 +6,15 @@
 #include <iostream>
 
 static void AI_loop_wrapper(AI *thisAI);
+static void swap(move *move1, move *move2);
+
+static void swap(move *move1, move *move2)
+{
+  auto tmp = *move1;
+  *move1 = *move2;
+  *move2 = tmp;
+}
+
 
 AI::AI(player *this_player_, player *opponent_, board *game_board_, std::mutex *draw_mtx_)
 {
@@ -26,6 +35,30 @@ AI::~AI()
   AI_thread->join();
   delete AI_thread;
 }
+void AI::sort_moves_MVV_LVA(move *moves, int len, board *the_board)
+{
+  static uint8_t order[] = {queen, rook, bishop, knight, pawn};
+
+  int end[sizeof(order) / sizeof(order[0])];
+  int prev_end = 0;
+  for(unsigned long j = 0; j < sizeof(order) / sizeof(order[0]); j++)
+  {
+    end[j]   = prev_end;
+    for(int i = 0; i < len; i++)
+    {
+      auto the_move = *moves + i;
+      uint8_t move_end_x = (the_move & X_END_MASK) >> X_END_OFF;
+      uint8_t move_end_y  = (the_move & Y_END_MASK) >> Y_END_OFF;
+      auto second_piece = the_board->fields[move_end_x][move_end_y];
+      if(second_piece->type == order[j])
+      {
+        swap(moves + i, moves + end[j]);
+        end[j]++;
+      }
+    }
+    prev_end = end[j];
+  }
+}
 
 void AI::get_best_move_piece(uint8_t pieceid, player *player1, player *player2, board *the_board, move *best_move, int32_t *max, bool *success)
 {
@@ -44,10 +77,13 @@ void AI::get_best_move_piece(uint8_t pieceid, player *player1, player *player2, 
   std::vector<move> possible_moves;
   possible_moves.reserve(100);
   if(game_board_copy.who2move == white)
+  {
     find_legal_moves(&(white_player->pieces[pieceid]), white_player, &game_board_copy, &possible_moves);
+  }
   else
+  {
     find_legal_moves(&(black_player->pieces[pieceid]), black_player, &game_board_copy, &possible_moves);
-
+  }
   for(auto the_move : possible_moves)
   {
     //perform the move and save some info about it so we can unmake it.
@@ -92,9 +128,13 @@ void AI::get_best_move_piece_alpha_beta(uint8_t pieceid, player *player1, player
   std::vector<move> possible_moves;
   possible_moves.reserve(100);
   if(game_board_copy.who2move == white)
+  {
     find_legal_moves(&(white_player->pieces[pieceid]), white_player, &game_board_copy, &possible_moves);
+  }
   else
+  {
     find_legal_moves(&(black_player->pieces[pieceid]), black_player, &game_board_copy, &possible_moves);
+  }
 
   for(auto the_move : possible_moves)
   {
@@ -325,7 +365,12 @@ int32_t AI::pawn_score(player *player1, board * the_board)
 int32_t AI::evaluate(player *white_player, player *black_player, board *the_board)
 {
   int32_t score = 0;
-
+  score = the_board->t_table->test_hash_eval( the_board->zob_hash);
+  if(score != UNKNOWN_VAL)
+  {
+    return score;
+  }
+  else score = 0;
   //get piece score
   std::vector<move> possible_moves_black;
   std::vector<move> possible_moves_white;
@@ -350,8 +395,9 @@ int32_t AI::evaluate(player *white_player, player *black_player, board *the_boar
 
   score += -5 * pawn_score(white_player, the_board);
   score -= -5 * pawn_score(black_player, the_board);
-  if(the_board->who2move == black) return -score;
-  else return score;
+  if(the_board->who2move == black) score = -score;
+  the_board->t_table->save_hash_eval(score, the_board->zob_hash);
+  return score;
 }
 
 int32_t AI::alpha_beta(int32_t alpha, int32_t beta, player *white_player, player *black_player, board *the_board, int depth)
@@ -435,7 +481,7 @@ int32_t AI::quiescence(int32_t alpha, int32_t beta, player *white_player, player
     for(uint8_t i = 0; i < 16; i++)
     {
       if(white_player->pieces[i].alive)
-        find_legal_moves(&(white_player->pieces[i]), white_player, the_board, &possible_moves);
+        find_legal_capture_moves(&(white_player->pieces[i]), white_player, the_board, &possible_moves);
     }
   }
   else
@@ -443,24 +489,19 @@ int32_t AI::quiescence(int32_t alpha, int32_t beta, player *white_player, player
     for(uint8_t i = 0; i < 16; i++)
     {
       if(black_player->pieces[i].alive)
-        find_legal_moves(&(black_player->pieces[i]), black_player, the_board, &possible_moves);
+        find_legal_capture_moves(&(black_player->pieces[i]), black_player, the_board, &possible_moves);
     }
   }
   for(auto the_move : possible_moves)
   {
-    uint8_t move_type = the_move & MOVE_TYPE_MASK;
-    if(move_type != QUIET && move_type != DOUBLEPAWN &&
-        move_type != QUEEN_SIDE_CASTLE && move_type != KING_SIDE_CASTLE)
-    {
-      uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
-      uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
-      piece *moving_piece = the_board->fields[move_start_x][move_start_y];
-      piece *targetpiece = the_board->make_move(moving_piece, the_move);
-      auto score = - quiescence(-beta, -alpha, white_player, black_player, the_board);
-      the_board->unmake_move(moving_piece, the_move, targetpiece);
-      if(score >= beta) return beta;
-      if(score > alpha) alpha = stand_pat;
-    }
+    uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
+    uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
+    piece *moving_piece = the_board->fields[move_start_x][move_start_y];
+    piece *targetpiece = the_board->make_move(moving_piece, the_move);
+    auto score = - quiescence(-beta, -alpha, white_player, black_player, the_board);
+    the_board->unmake_move(moving_piece, the_move, targetpiece);
+    if(score >= beta) return beta;
+    if(score > alpha) alpha = stand_pat;
   }
   return alpha;
 }

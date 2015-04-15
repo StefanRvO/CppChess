@@ -213,7 +213,22 @@ void board::make_final_move(piece *moving_piece, move the_move)
 { //makes the move and clears the t_table. This may need to be changed.
 
   make_move(moving_piece, the_move);
-  t_table->clear();
+  uint8_t move_type = the_move & MOVE_TYPE_MASK;
+
+  switch(move_type)
+  {
+    case CAPTURE:
+    case QUEEN_SIDE_CASTLE:
+    case DOUBLEPAWN:
+    case QUEENPROMO:
+    case KNIGHTPROMO:
+    case ROOKPROMO:
+    case BISHOPPROMO:
+    case KING_SIDE_CASTLE:
+      t_table->clear();
+    case QUIET:
+      break;
+  }
 }
 
 piece *board::make_move(piece *moving_piece, move the_move)

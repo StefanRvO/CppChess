@@ -1,18 +1,31 @@
 #include "../headers/Gamelogic.h"
+#include "../headers/AI.h"
 #include <cstdlib>
 #include <iostream>
 
-static void find_pseudo_legal_pawn_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
+static void find_pseudo_legal_capture_pawn_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
 
-static void find_pseudo_legal_knight_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
+static void find_pseudo_legal_capture_knight_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
 
-static void find_pseudo_legal_rook_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
+static void find_pseudo_legal_capture_rook_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
 
-static void find_pseudo_legal_bishop_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
+static void find_pseudo_legal_capture_bishop_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
 
-static void find_pseudo_legal_queen_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
+static void find_pseudo_legal_capture_queen_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
 
-static void find_pseudo_legal_king_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
+static void find_pseudo_legal_capture_king_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
+
+static void find_pseudo_legal_quiet_pawn_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
+
+static void find_pseudo_legal_quiet_knight_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
+
+static void find_pseudo_legal_quiet_rook_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
+
+static void find_pseudo_legal_quiet_bishop_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
+
+static void find_pseudo_legal_quiet_queen_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
+
+static void find_pseudo_legal_quiet_king_moves(piece *this_piece, board *game_board, std::vector<move> *moves);
 
 
 bool isChess(player *this_player, board *game_board)
@@ -45,8 +58,32 @@ int CheckChessMate(player *this_player, board *game_board)
 
 void find_legal_moves(piece *this_piece, player *this_player, board *game_board, std::vector<move> *moves)
 {
+  find_legal_capture_moves(this_piece, this_player, game_board, moves);
+  find_legal_quiet_moves(this_piece, this_player, game_board, moves);
+
+}
+
+void find_legal_capture_moves(piece *this_piece, player *this_player, board *game_board, std::vector<move> *moves)
+{
   std::vector<move> pseudo_legal_moves;
-  find_pseudo_legal_moves(this_piece, game_board, &pseudo_legal_moves);
+  find_pseudo_legal_capture_moves(this_piece, game_board, &pseudo_legal_moves);
+  for(auto this_move : pseudo_legal_moves)
+  {
+    //save info about move so it can be unmade.
+    piece *targetpiece = game_board->make_move(this_piece, this_move);
+    //check if king is in check
+    if(!isChess(this_player, game_board))
+    {
+      moves->push_back(this_move);
+    }
+    game_board->unmake_move(this_piece, this_move, targetpiece);
+  }
+}
+
+void find_legal_quiet_moves(piece *this_piece, player *this_player, board *game_board, std::vector<move> *moves)
+{
+  std::vector<move> pseudo_legal_moves;
+  find_pseudo_legal_quiet_moves(this_piece, game_board, &pseudo_legal_moves);
   for(auto this_move : pseudo_legal_moves)
   {
     //save info about move so it can be unmade.
@@ -225,65 +262,75 @@ bool is_under_attack(uint8_t x, uint8_t y, board *game_board, player_colour colo
 /* This function generates all moves
 ** without considering if the moves
 ** will make it's own king chess. */
-void find_pseudo_legal_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
+void find_pseudo_legal_capture_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
 {
   switch(this_piece->type)
   {
   	case pawn:
-      find_pseudo_legal_pawn_moves(this_piece, game_board, moves);
+      find_pseudo_legal_capture_pawn_moves(this_piece, game_board, moves);
       break;
   	case knight:
-      find_pseudo_legal_knight_moves(this_piece, game_board, moves);
+      find_pseudo_legal_capture_knight_moves(this_piece, game_board, moves);
       break;
   	case rook:
-      find_pseudo_legal_rook_moves(this_piece, game_board, moves);
+      find_pseudo_legal_capture_rook_moves(this_piece, game_board, moves);
       break;
     case bishop:
-      find_pseudo_legal_bishop_moves(this_piece, game_board, moves);
+      find_pseudo_legal_capture_bishop_moves(this_piece, game_board, moves);
       break;
   	case queen:
-      find_pseudo_legal_queen_moves(this_piece, game_board, moves);
+      find_pseudo_legal_capture_queen_moves(this_piece, game_board, moves);
   	  break;
   	case king:
-      find_pseudo_legal_king_moves(this_piece, game_board, moves);
+      find_pseudo_legal_capture_king_moves(this_piece, game_board, moves);
+      break;
+    default:
+      break;
+  }
+}
+void find_pseudo_legal_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
+{
+  find_pseudo_legal_capture_moves(this_piece, game_board, moves);
+  find_pseudo_legal_quiet_moves(this_piece, game_board, moves);
+}
+
+void find_pseudo_legal_quiet_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
+{
+  switch(this_piece->type)
+  {
+  	case pawn:
+      find_pseudo_legal_quiet_pawn_moves(this_piece, game_board, moves);
+      break;
+  	case knight:
+      find_pseudo_legal_quiet_knight_moves(this_piece, game_board, moves);
+      break;
+  	case rook:
+      find_pseudo_legal_quiet_rook_moves(this_piece, game_board, moves);
+      break;
+    case bishop:
+      find_pseudo_legal_quiet_bishop_moves(this_piece, game_board, moves);
+      break;
+  	case queen:
+      find_pseudo_legal_quiet_queen_moves(this_piece, game_board, moves);
+  	  break;
+  	case king:
+      find_pseudo_legal_quiet_king_moves(this_piece, game_board, moves);
       break;
     default:
       break;
   }
 }
 
+
 /* This function generates all moves for a pawn
 ** without considering if the moves
 ** will make it's own king chess. */
-static void find_pseudo_legal_pawn_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
+static void find_pseudo_legal_capture_pawn_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
 {
   if(this_piece->colour == white) //Find for white pawns
   {
-    if(this_piece->moves == 0) //first move
-    {
-      if(game_board->fields[this_piece->x_pos][this_piece->y_pos + 2] == nullptr &&
-          game_board->fields[this_piece->x_pos][this_piece->y_pos + 1] == nullptr) //don't need boundchecking here
-        moves->push_back(this_piece->x_pos << X_START_OFF | this_piece->x_pos << X_END_OFF |
-              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos + 2) << Y_END_OFF |
-              DOUBLEPAWN );
-    }
     if(this_piece->y_pos == 6) // check for promotions
     {
-      if(game_board->fields[this_piece->x_pos][this_piece->y_pos + 1] == nullptr) //don't need boundchecking here.
-      {
-        moves->push_back(this_piece->x_pos << X_START_OFF | this_piece->x_pos << X_END_OFF |
-              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos + 1) << Y_END_OFF |
-              QUEENPROMO );
-        moves->push_back(this_piece->x_pos << X_START_OFF | this_piece->x_pos << X_END_OFF |
-              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos + 1) << Y_END_OFF |
-              KNIGHTPROMO );
-        moves->push_back(this_piece->x_pos << X_START_OFF | this_piece->x_pos << X_END_OFF |
-              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos + 1) << Y_END_OFF |
-              ROOKPROMO );
-        moves->push_back(this_piece->x_pos << X_START_OFF | this_piece->x_pos << X_END_OFF |
-              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos + 1) << Y_END_OFF |
-              BISHOPPROMO );
-      }
       if(this_piece->x_pos != 0) //check capture left
       {
         if(game_board->fields[this_piece->x_pos - 1][this_piece->y_pos + 1] != nullptr &&
@@ -325,12 +372,6 @@ static void find_pseudo_legal_pawn_moves(piece *this_piece, board *game_board, s
     }
     else
     {
-      if(game_board->fields[this_piece->x_pos][this_piece->y_pos + 1] == nullptr) //don't need boundchecking here.
-      {
-        moves->push_back(this_piece->x_pos << X_START_OFF | this_piece->x_pos << X_END_OFF |
-              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos + 1) << Y_END_OFF |
-              QUIET );
-      }
       if(this_piece->x_pos != 0) //left capture
       {
         if(game_board->fields[this_piece->x_pos - 1][this_piece->y_pos + 1] != nullptr &&
@@ -350,6 +391,118 @@ static void find_pseudo_legal_pawn_moves(piece *this_piece, board *game_board, s
                 this_piece->y_pos << Y_START_OFF | (this_piece->y_pos + 1) << Y_END_OFF |
                 CAPTURE );
         }
+      }
+    }
+  }
+
+
+
+  else //Find for black pawns
+  {
+    if(this_piece->y_pos == 1) // check for promotions
+    {
+      if(this_piece->x_pos != 0) //check capture left
+      {
+        if(game_board->fields[this_piece->x_pos - 1][this_piece->y_pos - 1] != nullptr &&
+          game_board->fields[this_piece->x_pos - 1][this_piece->y_pos - 1]->colour == white)
+        {
+        moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos - 1) << X_END_OFF |
+              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
+              QUEENPROMO_CAP );
+        moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos - 1) << X_END_OFF |
+              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
+              KNIGHTPROMO_CAP );
+        moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos - 1) << X_END_OFF |
+              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
+              ROOKPROMO_CAP );
+        moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos - 1) << X_END_OFF |
+              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
+              BISHOPPROMO_CAP );
+        }
+      }
+      if(this_piece->x_pos != 7) //check capture right
+      {
+        if(game_board->fields[this_piece->x_pos + 1][this_piece->y_pos - 1] != nullptr &&
+          game_board->fields[this_piece->x_pos + 1][this_piece->y_pos - 1]->colour == white)
+        {
+        moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos + 1) << X_END_OFF |
+              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
+              QUEENPROMO_CAP );
+        moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos + 1) << X_END_OFF |
+              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
+              KNIGHTPROMO_CAP );
+        moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos + 1) << X_END_OFF |
+              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
+              ROOKPROMO_CAP );
+        moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos + 1) << X_END_OFF |
+              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
+              BISHOPPROMO_CAP );
+        }
+      }
+    }
+    else
+    {
+      if(this_piece->x_pos != 0) //left capture
+      {
+        if(game_board->fields[this_piece->x_pos - 1][this_piece->y_pos - 1] != nullptr &&
+         game_board->fields[this_piece->x_pos - 1][this_piece->y_pos - 1]-> colour == white)
+        {
+          moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos - 1) << X_END_OFF |
+                this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
+                CAPTURE );
+        }
+      }
+      if(this_piece->x_pos != 7) //right capture
+      {
+        if(game_board->fields[this_piece->x_pos + 1][this_piece->y_pos - 1] != nullptr &&
+         game_board->fields[this_piece->x_pos + 1][this_piece->y_pos - 1]-> colour == white)
+        {
+          moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos + 1) << X_END_OFF |
+                this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
+                CAPTURE );
+        }
+      }
+    }
+  }
+}
+
+static void find_pseudo_legal_quiet_pawn_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
+{
+  if(this_piece->colour == white) //Find for white pawns
+  {
+    if(this_piece->moves == 0) //first move
+    {
+      if(game_board->fields[this_piece->x_pos][this_piece->y_pos + 2] == nullptr &&
+          game_board->fields[this_piece->x_pos][this_piece->y_pos + 1] == nullptr) //don't need boundchecking here
+        moves->push_back(this_piece->x_pos << X_START_OFF | this_piece->x_pos << X_END_OFF |
+              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos + 2) << Y_END_OFF |
+              DOUBLEPAWN );
+    }
+    if(this_piece->y_pos == 6) // check for promotions
+    {
+      if(game_board->fields[this_piece->x_pos][this_piece->y_pos + 1] == nullptr) //don't need boundchecking here.
+      {
+        moves->push_back(this_piece->x_pos << X_START_OFF | this_piece->x_pos << X_END_OFF |
+              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos + 1) << Y_END_OFF |
+              QUEENPROMO );
+        moves->push_back(this_piece->x_pos << X_START_OFF | this_piece->x_pos << X_END_OFF |
+              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos + 1) << Y_END_OFF |
+              KNIGHTPROMO );
+        moves->push_back(this_piece->x_pos << X_START_OFF | this_piece->x_pos << X_END_OFF |
+              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos + 1) << Y_END_OFF |
+              ROOKPROMO );
+        moves->push_back(this_piece->x_pos << X_START_OFF | this_piece->x_pos << X_END_OFF |
+              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos + 1) << Y_END_OFF |
+              BISHOPPROMO );
+      }
+    }
+    else
+    {
+      if(game_board->fields[this_piece->x_pos][this_piece->y_pos + 1] == nullptr) //don't need boundchecking here.
+      {
+        moves->push_back(this_piece->x_pos << X_START_OFF | this_piece->x_pos << X_END_OFF |
+              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos + 1) << Y_END_OFF |
+              QUIET );
       }
     }
   }
@@ -383,44 +536,6 @@ static void find_pseudo_legal_pawn_moves(piece *this_piece, board *game_board, s
               this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
               BISHOPPROMO );
       }
-      if(this_piece->x_pos != 0) //check capture left
-      {
-        if(game_board->fields[this_piece->x_pos - 1][this_piece->y_pos - 1] != nullptr &&
-          game_board->fields[this_piece->x_pos - 1][this_piece->y_pos - 1]->colour == white)
-        {
-        moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos - 1) << X_END_OFF |
-              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
-              QUEENPROMO_CAP );
-        moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos - 1) << X_END_OFF |
-              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
-              KNIGHTPROMO_CAP );
-        moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos - 1) << X_END_OFF |
-              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
-              ROOKPROMO_CAP );
-        moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos - 1) << X_END_OFF |
-              this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
-              BISHOPPROMO_CAP );
-        }
-      }
-        if(this_piece->x_pos != 7) //check capture right
-        {
-          if(game_board->fields[this_piece->x_pos + 1][this_piece->y_pos - 1] != nullptr &&
-            game_board->fields[this_piece->x_pos + 1][this_piece->y_pos - 1]->colour == white)
-          {
-          moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos + 1) << X_END_OFF |
-                this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
-                QUEENPROMO_CAP );
-          moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos + 1) << X_END_OFF |
-                this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
-                KNIGHTPROMO_CAP );
-          moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos + 1) << X_END_OFF |
-                this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
-                ROOKPROMO_CAP );
-          moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos + 1) << X_END_OFF |
-                this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
-                BISHOPPROMO_CAP );
-          }
-        }
     }
     else
     {
@@ -430,34 +545,38 @@ static void find_pseudo_legal_pawn_moves(piece *this_piece, board *game_board, s
               this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
               QUIET );
       }
-      if(this_piece->x_pos != 0) //left capture
+    }
+  }
+}
+
+
+/* This function generates all moves for a knight
+** without considering if the moves
+** will make it's own king chess. */
+static void find_pseudo_legal_capture_knight_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
+{
+  int x = this_piece->x_pos;
+  int y = this_piece->y_pos;
+  for(int8_t i = -2; i <= 2; i++)
+  {
+    if(i == 0) continue;
+    for(int8_t j = -2; j <= 2; j++)
+    {
+      if(j==0 || abs(i) == abs(j)) continue;
+      if(x + i >= 0 && x + i <= 7 && y + j >= 0 && y + j <= 7)
       {
-        if(game_board->fields[this_piece->x_pos - 1][this_piece->y_pos - 1] != nullptr &&
-         game_board->fields[this_piece->x_pos - 1][this_piece->y_pos - 1]-> colour == white)
+        if (game_board->fields[x + i][y + j] != nullptr && game_board->fields[x + i][y + j]->colour != this_piece->colour)
         {
-          moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos - 1) << X_END_OFF |
-                this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
-                CAPTURE );
-        }
-      }
-      if(this_piece->x_pos != 7) //right capture
-      {
-        if(game_board->fields[this_piece->x_pos + 1][this_piece->y_pos - 1] != nullptr &&
-         game_board->fields[this_piece->x_pos + 1][this_piece->y_pos - 1]-> colour == white)
-        {
-          moves->push_back(this_piece->x_pos << X_START_OFF | (this_piece->x_pos + 1) << X_END_OFF |
-                this_piece->y_pos << Y_START_OFF | (this_piece->y_pos - 1) << Y_END_OFF |
-                CAPTURE );
+          moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
+            this_piece->y_pos << Y_START_OFF | uint8_t(y + j) << Y_END_OFF |
+            CAPTURE );
         }
       }
     }
   }
 }
 
-/* This function generates all moves for a knight
-** without considering if the moves
-** will make it's own king chess. */
-static void find_pseudo_legal_knight_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
+static void find_pseudo_legal_quiet_knight_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
 {
   int x = this_piece->x_pos;
   int y = this_piece->y_pos;
@@ -475,12 +594,6 @@ static void find_pseudo_legal_knight_moves(piece *this_piece, board *game_board,
             this_piece->y_pos << Y_START_OFF | uint8_t(y + j) << Y_END_OFF |
             QUIET );
         }
-        else if (game_board->fields[x + i][y + j]->colour != this_piece->colour)
-        {
-          moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
-            this_piece->y_pos << Y_START_OFF | uint8_t(y + j) << Y_END_OFF |
-            CAPTURE );
-        }
       }
     }
   }
@@ -489,16 +602,23 @@ static void find_pseudo_legal_knight_moves(piece *this_piece, board *game_board,
 /* This function generates all moves for a queen
 ** without considering if the moves
 ** will make it's own king chess. */
-static void find_pseudo_legal_queen_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
+static void find_pseudo_legal_capture_queen_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
 {
-  find_pseudo_legal_rook_moves(this_piece, game_board, moves);
-  find_pseudo_legal_bishop_moves(this_piece, game_board, moves);
+  find_pseudo_legal_capture_rook_moves(this_piece, game_board, moves);
+  find_pseudo_legal_capture_bishop_moves(this_piece, game_board, moves);
 }
+
+static void find_pseudo_legal_quiet_queen_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
+{
+  find_pseudo_legal_quiet_rook_moves(this_piece, game_board, moves);
+  find_pseudo_legal_quiet_bishop_moves(this_piece, game_board, moves);
+}
+
 
 /* This function generates all moves for a rook
 ** without considering if the moves
 ** will make it's own king chess.*/
-static void find_pseudo_legal_rook_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
+static void find_pseudo_legal_capture_rook_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
 {
   int x = this_piece->x_pos;
   int y = this_piece->y_pos;
@@ -507,9 +627,7 @@ static void find_pseudo_legal_rook_moves(piece *this_piece, board *game_board, s
   {
     if(game_board->fields[i + x][y] == nullptr)
     {
-      moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
-        this_piece->y_pos << Y_START_OFF | this_piece->y_pos << Y_END_OFF |
-        QUIET );
+      continue;
     }
     else if(game_board->fields[i + x][y]->colour == this_piece->colour)
       break;
@@ -526,9 +644,7 @@ static void find_pseudo_legal_rook_moves(piece *this_piece, board *game_board, s
   {
     if(game_board->fields[i + x][y] == nullptr)
     {
-      moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
-        this_piece->y_pos << Y_START_OFF | this_piece->y_pos << Y_END_OFF |
-        QUIET );
+      continue;
     }
     else if(game_board->fields[i + x][y]->colour == this_piece->colour)
       break;
@@ -545,9 +661,7 @@ static void find_pseudo_legal_rook_moves(piece *this_piece, board *game_board, s
   {
     if(game_board->fields[x][y + i] == nullptr)
     {
-      moves->push_back(this_piece->x_pos << X_START_OFF | this_piece->x_pos << X_END_OFF |
-        this_piece->y_pos << Y_START_OFF | uint8_t(y + i) << Y_END_OFF |
-        QUIET );
+      continue;
     }
     else if(game_board->fields[x][y + i]->colour == this_piece->colour)
       break;
@@ -564,9 +678,7 @@ static void find_pseudo_legal_rook_moves(piece *this_piece, board *game_board, s
   {
     if(game_board->fields[x][y + i] == nullptr)
     {
-      moves->push_back(this_piece->x_pos << X_START_OFF | this_piece->x_pos << X_END_OFF |
-        this_piece->y_pos << Y_START_OFF | uint8_t(y + i) << Y_END_OFF |
-        QUIET );
+      continue;
     }
     else if(game_board->fields[x][y + i]->colour == this_piece->colour)
       break;
@@ -579,8 +691,77 @@ static void find_pseudo_legal_rook_moves(piece *this_piece, board *game_board, s
     }
   }
 }
+static void find_pseudo_legal_quiet_rook_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
+{
+  int x = this_piece->x_pos;
+  int y = this_piece->y_pos;
+  //left
+  for(int8_t i = 1; i + x <= 7; i++)
+  {
+    if(game_board->fields[i + x][y] == nullptr)
+    {
+      moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
+        this_piece->y_pos << Y_START_OFF | this_piece->y_pos << Y_END_OFF |
+        QUIET );
+    }
+    else if(game_board->fields[i + x][y]->colour == this_piece->colour)
+      break;
+    else
+    {
+      break;
+    }
+  }
+  //right
+  for(int8_t i = -1; i + x >= 0; i--)
+  {
+    if(game_board->fields[i + x][y] == nullptr)
+    {
+      moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
+        this_piece->y_pos << Y_START_OFF | this_piece->y_pos << Y_END_OFF |
+        QUIET );
+    }
+    else if(game_board->fields[i + x][y]->colour == this_piece->colour)
+      break;
+    else
+    {
+      break;
+    }
+  }
+  //up
+  for(int8_t i = 1; i + y <= 7; i++)
+  {
+    if(game_board->fields[x][y + i] == nullptr)
+    {
+      moves->push_back(this_piece->x_pos << X_START_OFF | this_piece->x_pos << X_END_OFF |
+        this_piece->y_pos << Y_START_OFF | uint8_t(y + i) << Y_END_OFF |
+        QUIET );
+    }
+    else if(game_board->fields[x][y + i]->colour == this_piece->colour)
+      break;
+    else
+    {
+      break;
+    }
+  }
+  //down
+  for(int8_t i = -1; i + y >= 0; i--)
+  {
+    if(game_board->fields[x][y + i] == nullptr)
+    {
+      moves->push_back(this_piece->x_pos << X_START_OFF | this_piece->x_pos << X_END_OFF |
+        this_piece->y_pos << Y_START_OFF | uint8_t(y + i) << Y_END_OFF |
+        QUIET );
+    }
+    else if(game_board->fields[x][y + i]->colour == this_piece->colour)
+      break;
+    else
+    {
+      break;
+    }
+  }
+}
 
-static void find_pseudo_legal_bishop_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
+static void find_pseudo_legal_capture_bishop_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
 {
   int x = this_piece->x_pos;
   int y = this_piece->y_pos;
@@ -589,9 +770,7 @@ static void find_pseudo_legal_bishop_moves(piece *this_piece, board *game_board,
   {
     if(game_board->fields[i + x][i + y] == nullptr)
     {
-      moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
-        this_piece->y_pos << Y_START_OFF | uint8_t(y + i) << Y_END_OFF |
-        QUIET );
+      continue;
     }
     else if(game_board->fields[i + x][i + y]->colour == this_piece->colour)
       break;
@@ -608,9 +787,7 @@ static void find_pseudo_legal_bishop_moves(piece *this_piece, board *game_board,
   {
     if(game_board->fields[i + x][i + y] == nullptr)
     {
-      moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
-        this_piece->y_pos << Y_START_OFF | uint8_t(y + i) << Y_END_OFF |
-        QUIET );
+      continue;
     }
     else if(game_board->fields[i + x][i + y]->colour == this_piece->colour)
       break;
@@ -627,9 +804,7 @@ static void find_pseudo_legal_bishop_moves(piece *this_piece, board *game_board,
   {
     if(game_board->fields[x + i][y - i] == nullptr)
     {
-      moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
-        this_piece->y_pos << Y_START_OFF | uint8_t(y - i) << Y_END_OFF |
-        QUIET );
+      continue;
     }
     else if(game_board->fields[x + i][y - i]->colour == this_piece->colour)
       break;
@@ -646,9 +821,7 @@ static void find_pseudo_legal_bishop_moves(piece *this_piece, board *game_board,
   {
     if(game_board->fields[x + i][y - i] == nullptr)
     {
-      moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
-        this_piece->y_pos << Y_START_OFF | uint8_t(y - i) << Y_END_OFF |
-        QUIET );
+      continue;
     }
     else if(game_board->fields[x + i][y - i]->colour == this_piece->colour)
       break;
@@ -662,11 +835,82 @@ static void find_pseudo_legal_bishop_moves(piece *this_piece, board *game_board,
   }
 }
 
+static void find_pseudo_legal_quiet_bishop_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
+{
+  int x = this_piece->x_pos;
+  int y = this_piece->y_pos;
+  //left up
+  for(int8_t i = 1; i + x <= 7 && i + y <= 7; i++)
+  {
+    if(game_board->fields[i + x][i + y] == nullptr)
+    {
+      moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
+        this_piece->y_pos << Y_START_OFF | uint8_t(y + i) << Y_END_OFF |
+        QUIET );
+    }
+    else if(game_board->fields[i + x][i + y]->colour == this_piece->colour)
+      break;
+    else
+    {
+      break;
+    }
+  }
+  //right down
+  for(int8_t i = -1; i + x >= 0 && i + y >= 0; i--)
+  {
+    if(game_board->fields[i + x][i + y] == nullptr)
+    {
+      moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
+        this_piece->y_pos << Y_START_OFF | uint8_t(y + i) << Y_END_OFF |
+        QUIET );
+    }
+    else if(game_board->fields[i + x][i + y]->colour == this_piece->colour)
+      break;
+    else
+    {
+      break;
+    }
+  }
+  //right up
+  for(int8_t i = 1; i + x <= 7 && y - i >= 0 ; i++)
+  {
+    if(game_board->fields[x + i][y - i] == nullptr)
+    {
+      moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
+        this_piece->y_pos << Y_START_OFF | uint8_t(y - i) << Y_END_OFF |
+        QUIET );
+    }
+    else if(game_board->fields[x + i][y - i]->colour == this_piece->colour)
+      break;
+    else
+    {
+      break;
+    }
+  }
+  //down left
+  for(int8_t i = -1; i + x >= 0 && y - i <= 7 ; i--)
+  {
+    if(game_board->fields[x + i][y - i] == nullptr)
+    {
+      moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
+        this_piece->y_pos << Y_START_OFF | uint8_t(y - i) << Y_END_OFF |
+        QUIET );
+    }
+    else if(game_board->fields[x + i][y - i]->colour == this_piece->colour)
+      break;
+    else
+    {
+      break;
+    }
+  }
+}
+
+
 
 /* This function generates all moves for a king
 ** without considering if the moves
 ** will make it chess. */
-static void find_pseudo_legal_king_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
+static void find_pseudo_legal_capture_king_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
 {
   int x = this_piece->x_pos;
   int y = this_piece->y_pos;
@@ -679,17 +923,38 @@ static void find_pseudo_legal_king_moves(piece *this_piece, board *game_board, s
       if(y + j < 0) continue;
       if(y + j > 7) break;
       if(j == 0 && i == 0) continue;
-    if(game_board->fields[x + i][y + j] == nullptr)
+      if(game_board->fields[x + i][y + j] == nullptr)
       {
-        moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
-          this_piece->y_pos << Y_START_OFF | uint8_t(y + j) << Y_END_OFF |
-          QUIET );
+        continue;
       }
       else if(game_board->fields[x + i][y + j]->colour != this_piece->colour)
       {
         moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
           this_piece->y_pos << Y_START_OFF | uint8_t(y + j) << Y_END_OFF |
           CAPTURE );
+      }
+    }
+  }
+}
+
+static void find_pseudo_legal_quiet_king_moves(piece *this_piece, board *game_board, std::vector<move> *moves)
+{
+  int x = this_piece->x_pos;
+  int y = this_piece->y_pos;
+  for(int8_t i = -1; i <= 1; i++)
+  {
+    if(x + i < 0) continue;
+    if(x + i > 7) break;
+    for(int8_t j = -1; j <= 1; j++)
+    {
+      if(y + j < 0) continue;
+      if(y + j > 7) break;
+      if(j == 0 && i == 0) continue;
+      if(game_board->fields[x + i][y + j] == nullptr)
+      {
+        moves->push_back(this_piece->x_pos << X_START_OFF | uint8_t(x + i) << X_END_OFF |
+          this_piece->y_pos << Y_START_OFF | uint8_t(y + j) << Y_END_OFF |
+          QUIET );
       }
     }
   }
