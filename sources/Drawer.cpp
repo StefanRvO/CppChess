@@ -89,11 +89,9 @@ void drawer::draw_game_info()
   //draws info about the game in the right 20% of the screen.
   int w, h;
   SDL_GetWindowSize(window,&w,&h);
+  int fontsize = std::min(w, h);
   int w_offset = w * 0.8;
-  int fontsize = h;
-  if( fontsize > w) fontsize = w;
   fontsize /= 14;
-
   //Draw whose turn it is.
   TextDrawer TDrawerTurn("FreeSans.ttf", fontsize);
   if(game_board->who2move == black)
@@ -523,9 +521,9 @@ void drawer::draw_board()
     for(int j = 0; j < 8; j++)
     {
       if((j % 2 == 0 && i % 2 == 0) || ( j % 2 == 1 && i % 2 == 1))
-        SDL_SetRenderDrawColor(renderer, BLACK_FIELD_COLOUR);
-      else
         SDL_SetRenderDrawColor(renderer, WHITE_FIELD_COLOUR);
+      else
+        SDL_SetRenderDrawColor(renderer, BLACK_FIELD_COLOUR);
 
       SDL_Rect r;
       r.x = w / 8 * i;
