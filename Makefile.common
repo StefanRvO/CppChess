@@ -75,5 +75,7 @@ LDFLAGS=-Wl,--gc-sections 	\
 				-lSDL2              \
 				-lSDL2_ttf          \
 				-lSDL2_image        \
+				-static-libgcc 			\
+				-static-libstdc++
 
 include Makefile.rules

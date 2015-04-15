@@ -34,4 +34,5 @@ int main(int argv, char **args)
     AIPlayers.push_back(new AI(&black_player, &white_player, &game_board, &draw_mtx));
   }
   ui_drawer.loop();
+  return 0;
 }

@@ -1,0 +1,7 @@
+#include common definitions for all version of the makefile
+include  Makefile.common
+
+#define compiler
+COMPILER=x86_64-w64-mingw32-gcc
+CC=${COMPILER}
+#Locate gcc libraries
