@@ -593,7 +593,7 @@ void drawer::draw_last_move()
     SDL_SetRenderDrawColor(renderer, 180,0,255,0);
     SDL_Draw_Arrow(renderer, move_start_x * w / 8,
       (7 - move_start_y) * h / 8, move_end_x * w / 8,
-      (7 - move_end_y) * h / 8, h / 20, w / 20, w / 150);
+      (7 - move_end_y) * h / 8, h / 35, w / 35, w / 100);
   }
   draw_mtx->unlock();
 }
