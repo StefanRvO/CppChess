@@ -6,14 +6,6 @@
 #include <iostream>
 
 static void AI_loop_wrapper(AI *thisAI);
-static void swap(move *move1, move *move2);
-
-static void swap(move *move1, move *move2)
-{
-  auto tmp = *move1;
-  *move1 = *move2;
-  *move2 = tmp;
-}
 
 
 AI::AI(player *this_player_, player *opponent_, board *game_board_, std::mutex *draw_mtx_)
@@ -35,79 +27,7 @@ AI::~AI()
   AI_thread->join();
   delete AI_thread;
 }
-void AI::sort_moves_MVV_LVA(move *moves, int len, board *the_board)
-{
-  static uint8_t order[] = {queen, rook, bishop, knight, pawn};
 
-  int end[sizeof(order) / sizeof(order[0])];
-  int prev_end = 0;
-  for(unsigned long j = 0; j < sizeof(order) / sizeof(order[0]); j++)
-  {
-    end[j]   = prev_end;
-    for(int i = 0; i < len; i++)
-    {
-      auto the_move = *moves + i;
-      uint8_t move_end_x = (the_move & X_END_MASK) >> X_END_OFF;
-      uint8_t move_end_y  = (the_move & Y_END_MASK) >> Y_END_OFF;
-      auto second_piece = the_board->fields[move_end_x][move_end_y];
-      if(second_piece->type == order[j])
-      {
-        swap(moves + i, moves + end[j]);
-        end[j]++;
-      }
-    }
-    prev_end = end[j];
-  }
-}
-
-void AI::get_best_move_piece(uint8_t pieceid, player *player1, player *player2, board *the_board, move *best_move, int32_t *max, bool *success)
-{
-  player player1_copy    = *player1;
-  player player2_copy    = *player2;
-  board game_board_copy(player1_copy, player2_copy, *the_board);
-  game_board_copy.who2move = player1->colour;
-  *max = -99999999;
-  *best_move = 0xFFFF;
-  player *white_player;
-  player *black_player;
-
-  if(player1_copy.colour == white) {white_player = &player1_copy; black_player = &player2_copy;}
-  else                              {black_player = &player1_copy; white_player = &player2_copy;}
-
-  std::vector<move> possible_moves;
-  possible_moves.reserve(100);
-  if(game_board_copy.who2move == white)
-  {
-    find_legal_moves(&(white_player->pieces[pieceid]), white_player, &game_board_copy, &possible_moves);
-  }
-  else
-  {
-    find_legal_moves(&(black_player->pieces[pieceid]), black_player, &game_board_copy, &possible_moves);
-  }
-  for(auto the_move : possible_moves)
-  {
-    //perform the move and save some info about it so we can unmake it.
-    uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
-    uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
-    piece *moving_piece = game_board_copy.fields[move_start_x][move_start_y];
-    piece *targetpiece = game_board_copy.make_move(moving_piece, the_move);
-
-
-    int32_t score = -negamax(white_player, black_player, &game_board_copy, SEARCHDEPTH);
-
-    game_board_copy.unmake_move(moving_piece, the_move, targetpiece);
-
-    if(score > *max)
-    {
-      *max = score;
-      *best_move = the_move;
-    }
-  }
-  //hack to fix some weird bug
-  if(possible_moves.size() == 1)
-    *best_move = possible_moves[0];
-  *success = possible_moves.size();
-}
 
 void AI::get_best_move_piece_alpha_beta(uint8_t pieceid, player *player1, player *player2, board *the_board, move *best_move, int32_t *max, bool *success)
 {
@@ -202,42 +122,6 @@ move AI::get_best_move()
   return best_move;
 }
 
-int32_t AI::negamax(player *white_player, player *black_player, board *the_board, int depth)
-{
-  if(depth == 0) return evaluate(white_player, black_player, the_board);
-  int32_t max = -99999999;
-  std::vector<move> possible_moves;
-  if(the_board->who2move == white)
-  {
-    for(uint8_t i = 0; i < 16; i++)
-    {
-      if(white_player->pieces[i].alive)
-        find_legal_moves(&(white_player->pieces[i]), white_player, the_board, &possible_moves);
-    }
-  }
-  else
-  {
-    for(uint8_t i = 0; i < 16; i++)
-    {
-      if(black_player->pieces[i].alive)
-        find_legal_moves(&(black_player->pieces[i]), black_player, the_board, &possible_moves);
-    }
-  }
-  for(auto the_move : possible_moves)
-  {
-    //perform the move and save some info about it so we can unmake it.
-    uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
-    uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
-    piece *moving_piece = the_board->fields[move_start_x][move_start_y];
-    piece *targetpiece = the_board->make_move(moving_piece, the_move);
-
-    int32_t score = -negamax(white_player, black_player, the_board, depth - 1);
-    the_board->unmake_move(moving_piece, the_move, targetpiece);
-
-    if(score > max) max = score;
-  }
-  return max;
-}
 
 
 int32_t AI::issolated_pawns(player *player1, board * the_board)
