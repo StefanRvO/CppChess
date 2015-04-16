@@ -426,16 +426,16 @@ int32_t AI::evaluate(player *white_player, player *black_player, board *the_boar
 int32_t AI::alpha_beta(int32_t alpha, int32_t beta, player *white_player, player *black_player, board *the_board, int depth)
 {
   int32_t best_score = -99999999;
-  score_type type = ALPHA;
+  //score_type type = ALPHA;
   move best_move = 0xFFFF;
-  if((best_score = the_board->t_table->test_hash(depth, alpha, beta, &best_move, the_board->zob_hash)) != UNKNOWN_VAL)
-  {
-    return best_score;
-  }
+  //if((best_score = the_board->t_table->test_hash(depth, alpha, beta, &best_move, the_board->zob_hash)) != UNKNOWN_VAL)
+  //{
+  //  return best_score;
+  //}
   if(depth == 0)
   {
     best_score = quiescence(alpha, beta, white_player, black_player, the_board, QUIESCDEPTH);
-    the_board->t_table->save_hash(depth, best_score, EXACT, best_move, the_board->zob_hash);
+    //the_board->t_table->save_hash(depth, best_score, EXACT, best_move, the_board->zob_hash);
     return best_score;
   }
   std::vector<move> possible_moves;
@@ -473,7 +473,7 @@ int32_t AI::alpha_beta(int32_t alpha, int32_t beta, player *white_player, player
 
     if(score >= beta)
     {
-      the_board->t_table->save_hash(depth, beta, BETA, best_move, the_board->zob_hash);
+      //the_board->t_table->save_hash(depth, beta, BETA, best_move, the_board->zob_hash);
       return score;
     }
     if(score > best_score)
@@ -482,12 +482,12 @@ int32_t AI::alpha_beta(int32_t alpha, int32_t beta, player *white_player, player
       best_move = the_move;
       if(score > alpha)
       {
-        type = EXACT;
+        //type = EXACT;
         alpha = score;
       }
     }
   }
-  the_board->t_table->save_hash(depth, alpha, type, best_move, the_board->zob_hash);
+  //the_board->t_table->save_hash(depth, alpha, type, best_move, the_board->zob_hash);
   return alpha;
 }
 
@@ -525,7 +525,11 @@ int32_t AI::quiescence(int32_t alpha, int32_t beta, player *white_player, player
     auto score = - quiescence(-beta, -alpha, white_player, black_player, the_board, depth - 1);
     the_board->unmake_move(moving_piece, the_move, targetpiece);
     if(score >= beta) return beta;
-    if(score > alpha) alpha = stand_pat;
+    if (score > stand_pat)
+    {
+      stand_pat = score;
+      if(score > alpha) alpha = score;
+    }
   }
   return alpha;
 }
