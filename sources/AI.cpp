@@ -427,7 +427,6 @@ int32_t AI::evaluate(player *white_player, player *black_player, board *the_boar
   score += -5 * pawn_score(white_player, the_board);
   score -= -5 * pawn_score(black_player, the_board);
   if(the_board->who2move == black) score = -score;
-  the_board->t_table->save_hash_eval(score, the_board->zob_hash);
 
 
   //Need to do some stuff to special case chessmate and stalemate
@@ -451,6 +450,7 @@ int32_t AI::evaluate(player *white_player, player *black_player, board *the_boar
       score = 0;
       break;
   }
+  the_board->t_table->save_hash_eval(score, the_board->zob_hash);
   return score;
 }
 

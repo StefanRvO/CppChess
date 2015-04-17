@@ -14,7 +14,18 @@ int main(int argv, char **args)
   for(int i = 1; i < argv; i++)
   {
     std::string arg_str = args[i];
-    if      (arg_str == "-semiauto") {black_type = computer; white_type = human; break;}
+    if      (arg_str == "-semiauto")
+    {
+      black_type = computer;
+      white_type = human;
+      if(argv > i + 1)
+      {
+        if(std::string(args[i+1]) == "-black") {black_type = human; white_type = computer;}
+        else                                   {black_type = computer; white_type = human;}
+      }
+      else {black_type = computer; white_type = human;}
+      break;
+    }
     else if (arg_str == "-fullauto") {black_type = computer; white_type = computer; break;}
   }
   Trans_Table t_table;
