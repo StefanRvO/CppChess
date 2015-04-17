@@ -5,6 +5,7 @@
 #include "../headers/Gamelogic.h"
 #include <iostream>
 #include <algorithm>
+#include <sys/time.h>
 
 #ifdef DEBUG
 int32_t searches = 0;
@@ -166,9 +167,13 @@ int32_t AI::quiescence(int32_t alpha, int32_t beta, player *white_player, player
 
 move AI::get_best_move()
 {
+  timeval tmp_time;
+  gettimeofday(&tmp_time, NULL);
+  int64_t starttime = tmp_time.tv_sec * 1000000 + tmp_time.tv_usec;
   move best_move = 0xFFFF;
   auto this_player_cpy = *this_player;
   auto opponent_cpy = *opponent;
+  move final_best_move = 0xFFFF;
   board game_board_copy(this_player_cpy, opponent_cpy, *game_board);
   player *white_player;
   player *black_player;
@@ -198,6 +203,10 @@ move AI::get_best_move()
   int32_t lastbeta, lastalpha, beta, alpha;
   for(int i = 0; i <= SEARCHDEPTH; i++)
   {
+    //test if time limit has run out
+    gettimeofday(&tmp_time, NULL);
+    int64_t curtime = tmp_time.tv_sec * 1000000 + tmp_time.tv_usec;
+    if(curtime - TIMELIMIT > starttime) break;
     if(i == 0 || outside)
     {
       if(i != 0) std::cout << "failed" << std::endl;
@@ -220,6 +229,10 @@ move AI::get_best_move()
     std::sort(possible_move_score_pairs.begin(), possible_move_score_pairs.end(), move_score_comp);
     for(auto &the_move_score : possible_move_score_pairs)
     {
+      //test if time limit has run out
+      gettimeofday(&tmp_time, NULL);
+      curtime = tmp_time.tv_sec * 1000000 + tmp_time.tv_usec;
+      if(curtime - TIMELIMIT > starttime) break;
       //perform the move and save some info about it so we can unmake it.
       uint8_t move_start_x = (the_move_score.the_move & X_START_MASK) >> X_START_OFF;
       uint8_t move_start_y  = (the_move_score.the_move & Y_START_MASK) >> Y_START_OFF;
@@ -244,9 +257,10 @@ move AI::get_best_move()
     {
       outside = true;
     }
+    else final_best_move = best_move;
     lasteval = best_score;
   }
-  return best_move;
+  return final_best_move;
 }
 
 

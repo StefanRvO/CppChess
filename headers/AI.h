@@ -3,9 +3,10 @@
 #include <thread>
 #include "Move.h"
 #include <mutex>
-#define SEARCHDEPTH         3
+#define SEARCHDEPTH         6
 #define QUIESCDEPTH         20
 #define WINDOW_SIZE         (PAWNVAL / 4)
+#define TIMELIMIT 30000000 //time to search for a move in µs
 #pragma once
 
 class AI
