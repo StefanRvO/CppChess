@@ -4,7 +4,8 @@
 #include "Move.h"
 #include <mutex>
 #define SEARCHDEPTH         3
-#define QUIESCDEPTH         99
+#define QUIESCDEPTH         20
+#define WINDOW_SIZE         (PAWNVAL / 4)
 #pragma once
 
 class AI

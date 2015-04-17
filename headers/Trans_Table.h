@@ -1,4 +1,4 @@
-#define TABLE_SIZE 100000 //Table size in entries
+#define TABLE_SIZE 10000000 //Table size in entries
 #define UNKNOWN_VAL -99999999
 #include <mutex>
 #include <cstdint>
@@ -32,8 +32,10 @@ struct evaluate_entry
 class Trans_Table
 {
   public:
+    #ifdef TRANS_TABLE
     table_entry *entries_depth;
     table_entry *entries_always_replace;
+    #endif
     evaluate_entry *evaluations;
     std::mutex *table_mtx;
     Trans_Table();

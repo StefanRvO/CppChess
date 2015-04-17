@@ -40,11 +40,23 @@ AI::~AI()
 
 int32_t AI::alpha_beta(int32_t alpha, int32_t beta, player *white_player, player *black_player, board *the_board, int depth)
 {
+  #ifdef TRANS_TABLE
+  score_type type = ALPHA;
+  #endif
   int32_t best_score = -99999999;
   move best_move = 0xFFFF;
+  #ifdef TRANS_TABLE
+  if( ((best_score = the_board->t_table->test_hash(depth, alpha, beta, &best_move, the_board->zob_hash))) != UNKNOWN_VAL)
+  {
+    return best_score;
+  }
+  #endif
   if(depth == 0)
   {
     best_score = quiescence(alpha, beta, white_player, black_player, the_board, QUIESCDEPTH);
+    #ifdef TRANS_TABLE
+    the_board->t_table->save_hash(depth, best_score, EXACT, 0xFFFF, the_board->zob_hash);7
+    #endif
     return best_score;
   }
   std::vector<move> possible_moves;
@@ -79,7 +91,10 @@ int32_t AI::alpha_beta(int32_t alpha, int32_t beta, player *white_player, player
 
     if(score >= beta)
     {
-      return score;
+      #ifdef TRANS_TABLE
+      the_board->t_table->save_hash(depth, beta, BETA, best_move, the_board->zob_hash);
+      #endif
+      return beta;
     }
     if(score > best_score)
     {
@@ -87,10 +102,16 @@ int32_t AI::alpha_beta(int32_t alpha, int32_t beta, player *white_player, player
       best_move = the_move;
       if(score > alpha)
       {
+        #ifdef TRANS_TABLE
+        type = EXACT;
+        #endif
         alpha = score;
       }
     }
   }
+  #ifdef TRANS_TABLE
+  the_board->t_table->save_hash(depth, alpha, type, best_move, the_board->zob_hash);
+  #endif
   return alpha;
 }
 
@@ -172,13 +193,14 @@ move AI::get_best_move()
     possible_move_score_pairs.push_back(the_mv_sc);
 
   }
-  int32_t lasteval;
+  int32_t lasteval = 0;
   bool outside = false;
   int32_t lastbeta, lastalpha, beta, alpha;
   for(int i = 0; i <= SEARCHDEPTH; i++)
   {
     if(i == 0 || outside)
     {
+      if(i != 0) std::cout << "failed" << std::endl;
       beta = 99999999;
       alpha = -beta;
       lastalpha = alpha;
@@ -187,10 +209,13 @@ move AI::get_best_move()
     }
     else
     {
-      beta = lasteval + PAWNVAL / 4;
-      alpha = lasteval - PAWNVAL / 4;
+      beta = lasteval + WINDOW_SIZE;
+      alpha = lasteval - WINDOW_SIZE;
     }
     int32_t best_score = -99999999;
+    lastalpha = alpha;
+    lastbeta = beta;
+
 
     std::sort(possible_move_score_pairs.begin(), possible_move_score_pairs.end(), move_score_comp);
     for(auto &the_move_score : possible_move_score_pairs)
