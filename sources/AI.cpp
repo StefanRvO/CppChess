@@ -95,7 +95,6 @@ int32_t AI::alpha_beta(int32_t alpha, int32_t beta, player *white_player, player
 }
 
 
-
 int32_t AI::quiescence(int32_t alpha, int32_t beta, player *white_player, player *black_player, board *the_board, int depth)
 { //perform a quiescence search
   #ifdef DEBUG
@@ -173,11 +172,26 @@ move AI::get_best_move()
     possible_move_score_pairs.push_back(the_mv_sc);
 
   }
+  int32_t lasteval;
+  bool outside = false;
+  int32_t lastbeta, lastalpha, beta, alpha;
   for(int i = 0; i <= SEARCHDEPTH; i++)
   {
-    int32_t beta = 99999999;
-    int32_t alpha = -beta;
+    if(i == 0 || outside)
+    {
+      beta = 99999999;
+      alpha = -beta;
+      lastalpha = alpha;
+      lastbeta = beta;
+      outside = false;
+    }
+    else
+    {
+      beta = lasteval + PAWNVAL / 4;
+      alpha = lasteval - PAWNVAL / 4;
+    }
     int32_t best_score = -99999999;
+
     std::sort(possible_move_score_pairs.begin(), possible_move_score_pairs.end(), move_score_comp);
     for(auto &the_move_score : possible_move_score_pairs)
     {
@@ -201,6 +215,11 @@ move AI::get_best_move()
         }
       }
     }
+    if(best_score <= lastalpha || best_score >= lastbeta)
+    {
+      outside = true;
+    }
+    lasteval = best_score;
   }
   return best_move;
 }
