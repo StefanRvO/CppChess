@@ -4,6 +4,14 @@
 #include "../headers/Move.h"
 #include "../headers/Gamelogic.h"
 #include <iostream>
+#include <algorithm>
+
+#ifdef DEBUG
+int32_t searches = 0;
+std::mutex searcheslock;
+std::mutex searchdepth_lock;
+int32_t maxdepth = 99999;
+#endif
 
 static void AI_loop_wrapper(AI *thisAI);
 
@@ -29,93 +37,168 @@ AI::~AI()
 }
 
 
-void AI::get_best_move_piece_alpha_beta(uint8_t pieceid, player *player1, player *player2, board *the_board, move *best_move, int32_t *max, bool *success)
+
+int32_t AI::alpha_beta(int32_t alpha, int32_t beta, player *white_player, player *black_player, board *the_board, int depth)
 {
-  player player1_copy    = *player1;
-  player player2_copy    = *player2;
-  board game_board_copy(player1_copy, player2_copy, *the_board);
-  game_board_copy.who2move = player1->colour;
-  *max = -99999999;
-
-  *best_move = 0xFFFF;
-  player *white_player;
-  player *black_player;
-  int32_t alpha = -*max;
-  //int32_t beta = *max;
-  if(player1_copy.colour == white) {white_player = &player1_copy; black_player = &player2_copy;}
-  else                              {black_player = &player1_copy; white_player = &player2_copy;}
-
-  std::vector<move> possible_moves;
-  possible_moves.reserve(100);
-  if(game_board_copy.who2move == white)
+  int32_t best_score = -99999999;
+  move best_move = 0xFFFF;
+  if(depth == 0)
   {
-    find_legal_moves(&(white_player->pieces[pieceid]), white_player, &game_board_copy, &possible_moves);
+    best_score = quiescence(alpha, beta, white_player, black_player, the_board, QUIESCDEPTH);
+    return best_score;
+  }
+  std::vector<move> possible_moves;
+  if(best_move != 0xFFFF) possible_moves.push_back(best_move);
+  if(the_board->who2move == white)
+  {
+    for(uint8_t i = 0; i < 16; i++)
+    {
+      if(white_player->pieces[i].alive)
+        find_legal_moves(&(white_player->pieces[i]), white_player, the_board, &possible_moves);
+    }
   }
   else
   {
-    find_legal_moves(&(black_player->pieces[pieceid]), black_player, &game_board_copy, &possible_moves);
+    for(uint8_t i = 0; i < 16; i++)
+    {
+      if(black_player->pieces[i].alive)
+        find_legal_moves(&(black_player->pieces[i]), black_player, the_board, &possible_moves);
+    }
   }
-
   for(auto the_move : possible_moves)
   {
     //perform the move and save some info about it so we can unmake it.
     uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
     uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
-    piece *moving_piece = game_board_copy.fields[move_start_x][move_start_y];
-    piece *targetpiece = game_board_copy.make_move(moving_piece, the_move);
+    piece *moving_piece = the_board->fields[move_start_x][move_start_y];
+    piece *targetpiece = the_board->make_move(moving_piece, the_move);
 
+    auto score = - alpha_beta(-beta, -alpha, white_player, black_player, the_board, depth - 1);
 
-    auto score = - alpha_beta(-alpha, alpha, white_player, black_player, &game_board_copy, SEARCHDEPTH);
+    the_board->unmake_move(moving_piece, the_move, targetpiece);
 
-    game_board_copy.unmake_move(moving_piece, the_move, targetpiece);
-
-    if(score > *max)
+    if(score >= beta)
     {
-      *max = score;
-      *best_move = the_move;
+      return score;
+    }
+    if(score > best_score)
+    {
+      best_score = score;
+      best_move = the_move;
       if(score > alpha)
       {
         alpha = score;
       }
     }
   }
-  //hack to fix some weird bug
-  if(possible_moves.size() == 1)
-    *best_move = possible_moves[0];
-  *success = possible_moves.size();
-  the_board->t_table->save_hash(SEARCHDEPTH + 1, *max, EXACT, *best_move, game_board_copy.zob_hash);
-
+  return alpha;
 }
 
+
+
+int32_t AI::quiescence(int32_t alpha, int32_t beta, player *white_player, player *black_player, board *the_board, int depth)
+{ //perform a quiescence search
+  #ifdef DEBUG
+  searchdepth_lock.lock();
+  if(maxdepth > depth) maxdepth = depth;
+  searchdepth_lock.unlock();
+  #endif
+  int32_t stand_pat = evaluate(white_player, black_player, the_board);
+  if(stand_pat >= beta) return beta;
+  if(alpha < stand_pat) alpha = stand_pat;
+  if(depth == 0) return stand_pat;
+
+  //get capture moves
+  std::vector<move> possible_moves;
+  if(the_board->who2move == white)
+  {
+    for(uint8_t i = 0; i < 16; i++)
+    {
+      if(white_player->pieces[i].alive)
+        find_legal_capture_moves(&(white_player->pieces[i]), white_player, the_board, &possible_moves);
+    }
+  }
+  else
+  {
+    for(uint8_t i = 0; i < 16; i++)
+    {
+      if(black_player->pieces[i].alive)
+        find_legal_capture_moves(&(black_player->pieces[i]), black_player, the_board, &possible_moves);
+    }
+  }
+  for(auto the_move : possible_moves)
+  {
+    uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
+    uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
+    piece *moving_piece = the_board->fields[move_start_x][move_start_y];
+    piece *targetpiece = the_board->make_move(moving_piece, the_move);
+    auto score = - quiescence(-beta, -alpha, white_player, black_player, the_board, depth - 1);
+    the_board->unmake_move(moving_piece, the_move, targetpiece);
+    if(score >= beta) return score;
+    if (score > stand_pat)
+    {
+      stand_pat = score;
+      if(score > alpha) alpha = score;
+    }
+  }
+  return alpha;
+}
 
 move AI::get_best_move()
 {
   move best_move = 0xFFFF;
-  int32_t max = -99999999;
-  move best_piece_moves[16];
-  int32_t piece_maxs[16];
-  bool success[16] = {false};
-  std::vector<std::thread *> threads;
+  auto this_player_cpy = *this_player;
+  auto opponent_cpy = *opponent;
+  board game_board_copy(this_player_cpy, opponent_cpy, *game_board);
+  player *white_player;
+  player *black_player;
+  if(this_player_cpy.colour == black) {black_player = &this_player_cpy; white_player = &opponent_cpy;}
+  else                            {white_player = &this_player_cpy; black_player = &opponent_cpy;}
 
-  for(uint8_t i = 0; i <= 15; i++)
+  std::vector<move> possible_moves;
+  for(uint8_t i = 0; i < 16; i++)
   {
     if(this_player->pieces[i].alive)
     {
-      auto number = threads.size();
-      std::thread *piece_thread = new std::thread(AI::get_best_move_piece_alpha_beta, i, this_player, opponent, game_board, best_piece_moves + number, piece_maxs + number, success + number);
-      threads.push_back(piece_thread);
+      find_legal_moves(&(this_player_cpy.pieces[i]), &this_player_cpy, &game_board_copy, &possible_moves);
     }
   }
-  for(uint32_t i = 0; i < threads.size(); i++)
+
+  std::vector<move_score> possible_move_score_pairs;
+  for(auto the_move : possible_moves)
   {
-    threads[i]->join();
-    delete threads[i];
-    if(success[i])
+    move_score the_mv_sc;
+    the_mv_sc.score = -9999999;
+    the_mv_sc.the_move = the_move;
+    possible_move_score_pairs.push_back(the_mv_sc);
+
+  }
+  for(int i = 0; i <= SEARCHDEPTH; i++)
+  {
+    int32_t beta = 99999999;
+    int32_t alpha = -beta;
+    int32_t best_score = -99999999;
+    std::sort(possible_move_score_pairs.begin(), possible_move_score_pairs.end(), move_score_comp);
+    for(auto &the_move_score : possible_move_score_pairs)
     {
-      if(piece_maxs[i] > max || best_move == 0xFFFF)
+      //perform the move and save some info about it so we can unmake it.
+      uint8_t move_start_x = (the_move_score.the_move & X_START_MASK) >> X_START_OFF;
+      uint8_t move_start_y  = (the_move_score.the_move & Y_START_MASK) >> Y_START_OFF;
+      piece *moving_piece = game_board_copy.fields[move_start_x][move_start_y];
+      piece *targetpiece = game_board_copy.make_move(moving_piece, the_move_score.the_move);
+
+      auto score = - alpha_beta(-beta, -alpha, white_player, black_player, &game_board_copy, i);
+      the_move_score.score = score;
+      game_board_copy.unmake_move(moving_piece, the_move_score.the_move, targetpiece);
+
+      if(score > best_score)
       {
-        max = piece_maxs[i];
-        best_move = best_piece_moves[i];
+        best_score = score;
+        best_move = the_move_score.the_move;
+        if(score > alpha)
+        {
+          alpha = score;
+        }
       }
     }
   }
@@ -255,6 +338,12 @@ int32_t AI::evaluate(player *white_player, player *black_player, board *the_boar
     return score;
   }
   else score = 0;
+  #ifdef DEBUG
+  searcheslock.lock();
+  searches++;
+  searcheslock.unlock();
+  #endif
+
   //get piece score
   std::vector<move> possible_moves_black;
   std::vector<move> possible_moves_white;
@@ -307,116 +396,6 @@ int32_t AI::evaluate(player *white_player, player *black_player, board *the_boar
   return score;
 }
 
-int32_t AI::alpha_beta(int32_t alpha, int32_t beta, player *white_player, player *black_player, board *the_board, int depth)
-{
-  int32_t best_score = -99999999;
-  //score_type type = ALPHA;
-  move best_move = 0xFFFF;
-  //if((best_score = the_board->t_table->test_hash(depth, alpha, beta, &best_move, the_board->zob_hash)) != UNKNOWN_VAL)
-  //{
-  //  return best_score;
-  //}
-  if(depth == 0)
-  {
-    best_score = quiescence(alpha, beta, white_player, black_player, the_board, QUIESCDEPTH);
-    //the_board->t_table->save_hash(depth, best_score, EXACT, best_move, the_board->zob_hash);
-    return best_score;
-  }
-  std::vector<move> possible_moves;
-  if(best_move != 0xFFFF) possible_moves.push_back(best_move);
-  if(the_board->who2move == white)
-  {
-    for(uint8_t i = 0; i < 16; i++)
-    {
-      if(white_player->pieces[i].alive)
-        find_legal_moves(&(white_player->pieces[i]), white_player, the_board, &possible_moves);
-    }
-  }
-  else
-  {
-    for(uint8_t i = 0; i < 16; i++)
-    {
-      if(black_player->pieces[i].alive)
-        find_legal_moves(&(black_player->pieces[i]), black_player, the_board, &possible_moves);
-    }
-  }
-  int i = 0;
-  for(auto the_move : possible_moves)
-  {
-    if(i != 0 && the_move == possible_moves[0]) continue;
-    i++;
-    //perform the move and save some info about it so we can unmake it.
-    uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
-    uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
-    piece *moving_piece = the_board->fields[move_start_x][move_start_y];
-    piece *targetpiece = the_board->make_move(moving_piece, the_move);
-
-    auto score = - alpha_beta(-beta, -alpha, white_player, black_player, the_board, depth - 1);
-
-    the_board->unmake_move(moving_piece, the_move, targetpiece);
-
-    if(score >= beta)
-    {
-      //the_board->t_table->save_hash(depth, beta, BETA, best_move, the_board->zob_hash);
-      return score;
-    }
-    if(score > best_score)
-    {
-      best_score = score;
-      best_move = the_move;
-      if(score > alpha)
-      {
-        //type = EXACT;
-        alpha = score;
-      }
-    }
-  }
-  //the_board->t_table->save_hash(depth, alpha, type, best_move, the_board->zob_hash);
-  return alpha;
-}
-
-int32_t AI::quiescence(int32_t alpha, int32_t beta, player *white_player, player *black_player, board *the_board, int depth)
-{ //perform a quiescence search
-  int32_t stand_pat = evaluate(white_player, black_player, the_board);
-  if(stand_pat >= beta) return beta;
-  if(alpha < stand_pat) alpha = stand_pat;
-  if(depth == 0) return stand_pat;
-
-  //get capture moves
-  std::vector<move> possible_moves;
-  if(the_board->who2move == white)
-  {
-    for(uint8_t i = 0; i < 16; i++)
-    {
-      if(white_player->pieces[i].alive)
-        find_legal_capture_moves(&(white_player->pieces[i]), white_player, the_board, &possible_moves);
-    }
-  }
-  else
-  {
-    for(uint8_t i = 0; i < 16; i++)
-    {
-      if(black_player->pieces[i].alive)
-        find_legal_capture_moves(&(black_player->pieces[i]), black_player, the_board, &possible_moves);
-    }
-  }
-  for(auto the_move : possible_moves)
-  {
-    uint8_t move_start_x = (the_move & X_START_MASK) >> X_START_OFF;
-    uint8_t move_start_y  = (the_move & Y_START_MASK) >> Y_START_OFF;
-    piece *moving_piece = the_board->fields[move_start_x][move_start_y];
-    piece *targetpiece = the_board->make_move(moving_piece, the_move);
-    auto score = - quiescence(-beta, -alpha, white_player, black_player, the_board, depth - 1);
-    the_board->unmake_move(moving_piece, the_move, targetpiece);
-    if(score >= beta) return beta;
-    if (score > stand_pat)
-    {
-      stand_pat = score;
-      if(score > alpha) alpha = score;
-    }
-  }
-  return alpha;
-}
 
 
 void AI::AI_loop()
@@ -425,7 +404,15 @@ void AI::AI_loop()
   {
     if(game_board->who2move == this_player->colour)
     {
+      #ifdef DEBUG
+      searches = 0;
+      maxdepth = 99999;
+      #endif
       move best_move = get_best_move();
+      #ifdef DEBUG
+      std::cout << "evaluations: " << searches << std::endl;
+      std::cout << "maxdepth: " << SEARCHDEPTH + 1 + QUIESCDEPTH - maxdepth << std::endl;
+      #endif
       if(best_move == 0xFFFF) return;
       auto start_x = (best_move & X_START_MASK) >> X_START_OFF;
       auto start_y = (best_move & Y_START_MASK) >> Y_START_OFF;
