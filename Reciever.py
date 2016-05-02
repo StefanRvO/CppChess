@@ -7,13 +7,15 @@ class CommandSender():
         self.serial = Serial()
         self.serial.port = tty
         self.serial.baudrate = baud
+	self.serial.rtscts=True
+	self.serial.dsrdtr=True
         self.serial.open()
         self.connected = True
         #time.sleep(1)
 
     def sendCommand(self, command):
         commandstr = command + "\n"
-        self.serial.write(commandstr.encode("ascii"))
+        self.serial.write(commandstr.encode("ascii")
 
 
 
