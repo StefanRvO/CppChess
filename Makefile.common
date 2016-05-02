@@ -36,7 +36,7 @@ OBJECTS = $(OBJECTS_:.cpp=.o)
 
 
 #Define linker, archiver, etc. Compiler is defined in main makefile
-PREFIX=
+PREFIX=/home/stefan/kernel_compile/raspian_kernel/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian-x64/bin/arm-linux-gnueabihf-
 AR=${PREFIX}ar
 LD=${CC}
 AS=${PREFIX}gcc
