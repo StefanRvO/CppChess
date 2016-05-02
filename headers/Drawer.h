@@ -11,6 +11,8 @@
 #include <SDL2/SDL2_gfxPrimitives.h>
 #include <SDL2/SDL_image.h>
 #include <mutex>
+#include "zmqcom.hpp"
+
 #define WINDOWSIZE_X 750
 #define WINDOWSIZE_Y 600
 #define BLACK_FIELD_COLOUR      125,125,125,255
@@ -35,6 +37,7 @@ class drawer
     player *player2;
     Timer timer;
     board  *game_board;
+    ZMQCom *Zcom;
     bool stop = false;
     void draw_piece(piece *this_piece, int w, int h);
     move select_move(player_colour player_to_select);

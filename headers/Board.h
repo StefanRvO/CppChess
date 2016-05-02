@@ -24,6 +24,7 @@ class board
     bool is_board_consistent();
     void print_board();
     std::string get_board_string();
+    std::string get_board_string_simple();
     piece *make_move(piece *moving_piece, move the_move);
     void make_final_move(piece *moving_piece, move the_move);
     void unmake_move(piece *moving_piece, move the_move, piece *second_piece);

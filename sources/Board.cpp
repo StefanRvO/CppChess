@@ -132,6 +132,44 @@ std::string board::get_board_string()
   return boardstr;
 }
 
+std::string board::get_board_string_simple()
+{ //Get a simple boardstring. Each piece is four charaters. they are seperated by a space:
+  //1:Colour B/W
+  //2:type P/R/K/Q/T/H
+  //X-Coord 0-7
+  //Y-Coord 0-7
+  std::string boardstr;
+  for(uint8_t i = 0; i <= 7; i++)
+  {
+      for(uint8_t j = 0; j <= 7; j++)
+      {
+        if(fields[j][i] != nullptr && fields[j][i]->alive)
+        {
+            if(fields[j][i]->colour == black) boardstr+="B";
+            if(fields[j][i]->colour == white) boardstr+="W";
+            switch(fields[j][i]->type)
+            {
+            case pawn:
+              boardstr += "P"; break;
+            case bishop:
+              boardstr += "R"; break;
+            case king:
+              boardstr += "K"; break;
+            case queen:
+              boardstr += "Q"; break;
+            case rook:
+              boardstr += "T"; break;
+            case knight:
+              boardstr += "H"; break;
+            }
+          boardstr += std::to_string(j) + std::to_string(i) + " ";
+        }
+      }
+  }
+  return boardstr;
+
+}
+
 void board::print_board()
 {
   std::cout << get_board_string();

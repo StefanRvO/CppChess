@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include "../headers/AI.h"
 #include "../headers/Primitives.h"
+
 drawer::drawer(player *white_player, player *black_player, board *game_board_, std::mutex *draw_mtx_)
 :timer(Timer(DRAWFPS))
 {
@@ -13,6 +14,7 @@ drawer::drawer(player *white_player, player *black_player, board *game_board_, s
   player2 = black_player;
   draw_mtx = draw_mtx_;
   game_board = game_board_;
+  Zcom = new ZMQCom(5556);
 
   //Init SDL
   if(SDL_Init(SDL_INIT_VIDEO) != 0)
@@ -82,6 +84,7 @@ drawer::~drawer()
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   SDL_Quit();
+  delete Zcom;
 }
 
 void drawer::draw_game_info()
@@ -446,6 +449,8 @@ void drawer::loop()
     draw_game_info();
     draw_last_move();
     SDL_RenderPresent(renderer);
+    Zcom->send_board(game_board->get_board_string_simple());
+
     if( (game_board-> who2move == white && player1->type == human) || (game_board-> who2move == black && player2->type == human))
     {
       SDL_SetRenderDrawColor(renderer,0,0,0,255);
@@ -455,6 +460,7 @@ void drawer::loop()
       draw_game_info();
       draw_last_move();
       SDL_RenderPresent(renderer);
+      Zcom->send_board(game_board->get_board_string_simple());
       move selected_move = select_move(game_board-> who2move);
       if(selected_move == 0xFFFF) return;
       auto start_x = (selected_move & X_START_MASK) >> X_START_OFF;
