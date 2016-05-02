@@ -429,6 +429,7 @@ void drawer::draw_possible_moves_board(std::vector<move> *possible_moves)
 
 void drawer::loop()
 {
+  std::string last_board_str;
   while(!stop)
   {
     timer.tick();
@@ -449,7 +450,10 @@ void drawer::loop()
     draw_game_info();
     draw_last_move();
     SDL_RenderPresent(renderer);
-    Zcom->send_board(game_board->get_board_string_simple());
+    auto board_str = game_board->get_board_string_simple();
+    if(board_str != last_board_str)
+        Zcom->send_board(game_board->get_board_string_simple());
+    last_board_str = board_str;
 
     if( (game_board-> who2move == white && player1->type == human) || (game_board-> who2move == black && player2->type == human))
     {
@@ -460,7 +464,10 @@ void drawer::loop()
       draw_game_info();
       draw_last_move();
       SDL_RenderPresent(renderer);
-      Zcom->send_board(game_board->get_board_string_simple());
+      board_str = game_board->get_board_string_simple();
+      if(board_str != last_board_str)
+          Zcom->send_board(game_board->get_board_string_simple());
+      last_board_str = board_str;
       move selected_move = select_move(game_board-> who2move);
       if(selected_move == 0xFFFF) return;
       auto start_x = (selected_move & X_START_MASK) >> X_START_OFF;

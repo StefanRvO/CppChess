@@ -110,18 +110,18 @@ std::string board::get_board_string()
         {
           switch(fields[j][i]->type)
           {
-            case pawn:
-              boardstr += "P"; break;
-            case bishop:
-              boardstr += "R"; break;
-            case king:
-              boardstr += "K"; break;
-            case queen:
-              boardstr += "Q"; break;
-            case rook:
-              boardstr += "T"; break;
-            case knight:
-              boardstr += "H"; break;
+              case pawn:
+                boardstr += "P"; break;
+              case bishop:
+                boardstr += "B"; break;
+              case king:
+                boardstr += "K"; break;
+              case queen:
+                boardstr += "Q"; break;
+              case rook:
+                boardstr += "R"; break;
+              case knight:
+                boardstr += "H"; break;
           }
       }
       else boardstr += " ";
@@ -135,7 +135,7 @@ std::string board::get_board_string()
 std::string board::get_board_string_simple()
 { //Get a simple boardstring. Each piece is four charaters. they are seperated by a space:
   //1:Colour B/W
-  //2:type P/R/K/Q/T/H
+  //2:type P/B/K/Q/R/H
   //X-Coord 0-7
   //Y-Coord 0-7
   std::string boardstr;
@@ -152,13 +152,13 @@ std::string board::get_board_string_simple()
             case pawn:
               boardstr += "P"; break;
             case bishop:
-              boardstr += "R"; break;
+              boardstr += "B"; break;
             case king:
               boardstr += "K"; break;
             case queen:
               boardstr += "Q"; break;
             case rook:
-              boardstr += "T"; break;
+              boardstr += "R"; break;
             case knight:
               boardstr += "H"; break;
             }
