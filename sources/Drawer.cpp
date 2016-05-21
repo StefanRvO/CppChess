@@ -486,11 +486,12 @@ void drawer::loop()
     if(board_str != last_board_str)
     {
          diff_str = get_string_diff(board_str, last_board_str);
+	 if(last_board_str == "") diff_str = std::string("##### ") + diff_str;
         Zcom->send_board(diff_str);
         std::cout << diff_str << std::endl;
+	last_board_str = board_str;
 
     }
-    last_board_str = board_str;
 
     if( (game_board-> who2move == white && player1->type == human) || (game_board-> who2move == black && player2->type == human))
     {
@@ -504,10 +505,12 @@ void drawer::loop()
       if(board_str != last_board_str)
       {
            diff_str = get_string_diff(board_str, last_board_str);
+	   if(last_board_str == "") diff_str = std::string("##### ") + diff_str;
+
           Zcom->send_board(diff_str);
           std::cout << diff_str << std::endl;
+	  last_board_str = board_str;
       }
-      last_board_str = board_str;
       move selected_move = select_move(game_board-> who2move);
       if(selected_move == 0xFFFF) return;
       auto start_x = (selected_move & X_START_MASK) >> X_START_OFF;

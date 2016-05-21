@@ -6,7 +6,7 @@
 #define SEARCHDEPTH         6
 #define QUIESCDEPTH         20
 #define WINDOW_SIZE         (PAWNVAL / 4)
-#define TIMELIMIT 5000000 //time to search for a move in µs
+#define TIMELIMIT 500000 //time to search for a move in µs
 #pragma once
 
 class AI
@@ -25,10 +25,11 @@ class AI
   public:
     static int32_t issolated_pawns(player *player1, board * the_board);
     static int32_t doubled_pawns(player *player1, board * the_board);
+    static int32_t pawn_position_score(player *player1, board * the_board);
     static int32_t blocked_pawns(player *player1, board * the_board);
     static int32_t pawn_score(player *player1, board * the_board);
     static int32_t evaluate(player *player1, player *player2, board *the_board);
-
+    
 
     AI(player *this_player_, player *opponent_, board *game_board_, std::mutex *draw_mtx);
     ~AI();

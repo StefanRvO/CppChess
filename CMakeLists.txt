@@ -27,6 +27,7 @@ SET( CMAKE_CXX_FLAGS  "	${CMAKE_CXX_FLAGS}	\
 			-pedantic		\
 			-Wunused-variable	\
 			-g			\
+			-O0			\
 " )
 
 add_subdirectory("sources")

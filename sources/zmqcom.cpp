@@ -16,7 +16,8 @@ ZMQCom::~ZMQCom()
 void ZMQCom::send_board(std::string board)
 {
     std::string topic = "chess_board";
-    zmq::message_t message(board.size() + topic.size()); //creae new message 1000 bytes.
+    zmq::message_t message(topic.size() + board.size() + 1); //creae new message 1000 bytes.
     snprintf((char *) message.data(), 1000, "%s %s", topic.c_str(), board.c_str());
+    std::cout << (char *)message.data() << std::endl;
     publisher->send(message);
 }

@@ -339,6 +339,20 @@ int32_t AI::doubled_pawns(player *player1, board * the_board)
   return total_doubled;
 }
 
+int32_t AI::pawn_position_score(player *player1, __attribute__((unused))board * the_board)
+{
+	int32_t score = 0;
+	for(uint8_t i = 8; i < 16; i++)
+	{
+		if(player1->pieces[i].type != pawn || !player1->pieces[i].alive) continue;
+		if(player1->colour == white)
+			score += player1->pieces[i].y_pos;
+		else
+			score += (7 - player1->pieces[i].y_pos);
+	}
+	return score;
+
+}
 int32_t AI::blocked_pawns(player *player1, board * the_board)
 {
   int32_t total_blocked = 0;
@@ -380,9 +394,10 @@ int32_t AI::blocked_pawns(player *player1, board * the_board)
 int32_t AI::pawn_score(player *player1, board * the_board)
 {
   int32_t score = 0;
-  score += issolated_pawns(player1, the_board);
-  score += blocked_pawns(player1, the_board);
-  score += doubled_pawns(player1, the_board);
+  score += 2* issolated_pawns(player1, the_board);
+  score += 2 *blocked_pawns(player1, the_board);
+  score += 2 *doubled_pawns(player1, the_board);
+  score -= pawn_position_score(player1, the_board);
   return score;
 }
 
@@ -424,8 +439,8 @@ int32_t AI::evaluate(player *white_player, player *black_player, board *the_boar
   score += 1 * possible_moves_white.size();
   score -= 1 * possible_moves_black.size();
 
-  score += -5 * pawn_score(white_player, the_board);
-  score -= -5 * pawn_score(black_player, the_board);
+  score += -3 * pawn_score(white_player, the_board);
+  score -= -3 * pawn_score(black_player, the_board);
   if(the_board->who2move == black) score = -score;
 
 
