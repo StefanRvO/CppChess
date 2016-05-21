@@ -34,6 +34,7 @@ seri = CommandSender(sys.argv[1], sys.argv[2])
 
 
 last_board = ""
+
 while True:
         string = socket.recv().decode()
         board = string[len(topic) + 1:]

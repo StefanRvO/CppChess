@@ -6,6 +6,37 @@
 #include <cstdlib>
 #include "../headers/AI.h"
 #include "../headers/Primitives.h"
+#include <sstream>
+
+std::vector<std::string > split_str(std::string str)
+{
+    std::string tmp;
+    std::stringstream ss(str);
+    std::vector<std::string> tokens;
+    while(ss >> tmp)
+        tokens.push_back(tmp);
+    return tokens;
+}
+
+std::string get_string_diff(std::string new_str, std::string prev_str = "")
+{
+    std::string diff_str = "";
+    std::vector<std::string> tokens = split_str(prev_str);
+    for(auto token : tokens)
+    {
+        if(new_str.find(token) == std::string::npos)
+            diff_str += std::string("-") + token + " ";
+    }
+
+    tokens = split_str(new_str);
+    for(auto token : tokens)
+    {
+        if(prev_str.find(token) == std::string::npos)
+            diff_str += std::string("+") + token + " ";
+    }
+    return diff_str;
+}
+
 
 drawer::drawer(player *white_player, player *black_player, board *game_board_, std::mutex *draw_mtx_)
 :timer(Timer(DRAWFPS))
@@ -451,10 +482,15 @@ void drawer::loop()
     draw_last_move();
     SDL_RenderPresent(renderer);
     auto board_str = game_board->get_board_string_simple();
+    std::string diff_str;
     if(board_str != last_board_str)
-        Zcom->send_board(board_str);
+    {
+         diff_str = get_string_diff(board_str, last_board_str);
+        Zcom->send_board(diff_str);
+        std::cout << diff_str << std::endl;
+
+    }
     last_board_str = board_str;
-    std::cout << board_str << std::endl;
 
     if( (game_board-> who2move == white && player1->type == human) || (game_board-> who2move == black && player2->type == human))
     {
@@ -465,11 +501,13 @@ void drawer::loop()
       draw_game_info();
       draw_last_move();
       SDL_RenderPresent(renderer);
-      board_str = game_board->get_board_string_simple();
       if(board_str != last_board_str)
-          Zcom->send_board(board_str);
+      {
+           diff_str = get_string_diff(board_str, last_board_str);
+          Zcom->send_board(diff_str);
+          std::cout << diff_str << std::endl;
+      }
       last_board_str = board_str;
-      std::cout << board_str << std::endl;
       move selected_move = select_move(game_board-> who2move);
       if(selected_move == 0xFFFF) return;
       auto start_x = (selected_move & X_START_MASK) >> X_START_OFF;

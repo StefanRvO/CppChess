@@ -162,7 +162,7 @@ std::string board::get_board_string_simple()
             case knight:
               boardstr += "H"; break;
             }
-          boardstr += std::to_string(j) + std::to_string(i) + " ";
+          boardstr += std::to_string(i) + std::to_string(j) + " ";
         }
       }
   }
