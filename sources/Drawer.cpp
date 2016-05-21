@@ -452,8 +452,9 @@ void drawer::loop()
     SDL_RenderPresent(renderer);
     auto board_str = game_board->get_board_string_simple();
     if(board_str != last_board_str)
-        Zcom->send_board(game_board->get_board_string_simple());
+        Zcom->send_board(board_str);
     last_board_str = board_str;
+    std::cout << board_str << std::endl;
 
     if( (game_board-> who2move == white && player1->type == human) || (game_board-> who2move == black && player2->type == human))
     {
@@ -466,8 +467,9 @@ void drawer::loop()
       SDL_RenderPresent(renderer);
       board_str = game_board->get_board_string_simple();
       if(board_str != last_board_str)
-          Zcom->send_board(game_board->get_board_string_simple());
+          Zcom->send_board(board_str);
       last_board_str = board_str;
+      std::cout << board_str << std::endl;
       move selected_move = select_move(game_board-> who2move);
       if(selected_move == 0xFFFF) return;
       auto start_x = (selected_move & X_START_MASK) >> X_START_OFF;

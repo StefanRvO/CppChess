@@ -1,6 +1,7 @@
 import sys
 import zmq
 from serial import Serial
+import time
 
 class CommandSender():
     def __init__(self, tty, baud):
@@ -11,10 +12,10 @@ class CommandSender():
         self.serial.dsrdtr=True
         self.serial.open()
         self.connected = True
-        #time.sleep(1)
+        time.sleep(1)
 
     def sendCommand(self, command):
-        commandstr = command + "\n"
+        commandstr = "SET BOARD " + command + "\n"
         self.serial.write(commandstr.encode("ascii"))
 
 
@@ -32,8 +33,12 @@ seri = CommandSender(sys.argv[1], sys.argv[2])
 
 
 
+last_board = ""
 while True:
         string = socket.recv().decode()
         board = string[len(topic) + 1:]
-        print(board)
-        seri.sendCommand(board)
+        if(board is not last_board):
+            print(board)
+            print()
+            seri.sendCommand(board)
+            last_board = board

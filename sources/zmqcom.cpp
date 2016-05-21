@@ -5,7 +5,7 @@ ZMQCom::ZMQCom(int port)
 {
     context = new zmq::context_t(1);
     publisher = new zmq::socket_t(*context, ZMQ_PUB);
-    publisher->bind("tcp://*:" + std::to_string(port));
+    publisher->bind(std::string("tcp://*:" + std::to_string(port)).c_str());
 }
 
 ZMQCom::~ZMQCom()
